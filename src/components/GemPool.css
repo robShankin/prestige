@@ -1,0 +1,224 @@
+/* Gem Pool */
+.gem-pool {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gem-pool h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #4caf50;
+}
+
+/* Gems Display */
+.gems-display {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.gem-token {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.1) 100%);
+}
+
+.gem-token.gem-red {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+  border-color: #ff5252;
+}
+
+.gem-token.gem-blue {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border-color: #42a5f5;
+}
+
+.gem-token.gem-green {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+  border-color: #66bb6a;
+}
+
+.gem-token.gem-white {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  border-color: #bdbdbd;
+  color: #000;
+}
+
+.gem-token.gem-black {
+  background: linear-gradient(135deg, #424242 0%, #212121 100%);
+  border-color: #757575;
+}
+
+.gem-token.gem-gold {
+  background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%);
+  border-color: #ffb300;
+  color: #000;
+}
+
+.gem-token:not(.disabled):hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.gem-token.selected {
+  border-color: #fff;
+  border-width: 3px;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5) inset, 0 0 15px rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.gem-token.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gem-count {
+  font-size: 1.3rem;
+  z-index: 2;
+}
+
+.selection-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+/* Selection Info */
+.selection-info {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 3px solid #4caf50;
+}
+
+.selection-info p {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.selected-gems {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gem-tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: capitalize;
+  color: #000;
+}
+
+.gem-tag.gem-red {
+  background: #d32f2f;
+}
+
+.gem-tag.gem-blue {
+  background: #1976d2;
+}
+
+.gem-tag.gem-green {
+  background: #388e3c;
+}
+
+.gem-tag.gem-white {
+  background: #f5f5f5;
+}
+
+.gem-tag.gem-black {
+  background: #424242;
+  color: #fff;
+}
+
+.gem-tag.gem-gold {
+  background: #ffc107;
+}
+
+/* Gem Actions */
+.gem-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: rgba(102, 126, 234, 0.2);
+  color: #667eea;
+  border: 1px solid #667eea;
+}
+
+.btn-secondary:not(:disabled):hover {
+  background: rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Validation Messages */
+.validation-message {
+  padding: 10px;
+  background: rgba(255, 152, 0, 0.2);
+  border-left: 3px solid #ff9800;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #ffb74d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gems-display {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .btn {
+    font-size: 0.8rem;
+    padding: 8px 16px;
+  }
+}

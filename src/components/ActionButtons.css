@@ -1,0 +1,168 @@
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.action-buttons h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #667eea;
+}
+
+/* AI Thinking State */
+.ai-thinking {
+  padding: 30px;
+  text-align: center;
+  background: rgba(255, 152, 0, 0.1);
+  border-radius: 8px;
+  border: 2px dashed #ff9800;
+}
+
+.ai-thinking p {
+  margin: 0;
+  color: #ffb74d;
+  font-weight: 600;
+  animation: fade 1.5s ease-in-out infinite;
+}
+
+@keyframes fade {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Button Grid */
+.button-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-label {
+  font-size: 0.85rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  padding: 0 0 5px 0;
+}
+
+/* Buttons */
+.btn {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-height: 40px;
+}
+
+/* Button Types */
+.btn-purchase {
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  color: white;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.btn-purchase:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.btn-reserve {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  border: 1px solid rgba(255, 152, 0, 0.5);
+}
+
+.btn-reserve:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+}
+
+.btn-noble {
+  background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%);
+  color: #000;
+  border: 1px solid rgba(255, 193, 7, 0.5);
+}
+
+.btn-noble:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 1px solid rgba(102, 126, 234, 0.5);
+}
+
+.btn-primary:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-large {
+  font-size: 1rem;
+  padding: 14px 20px;
+  min-height: 44px;
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* More Actions Indicator */
+.more-actions {
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #aaa;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  border: 1px dashed rgba(102, 126, 234, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .btn {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    min-height: 36px;
+  }
+
+  .btn-large {
+    font-size: 0.95rem;
+    padding: 12px 18px;
+    min-height: 40px;
+  }
+
+  .action-group {
+    gap: 6px;
+  }
+
+  .button-grid {
+    gap: 12px;
+  }
+}

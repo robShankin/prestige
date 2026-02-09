@@ -1,0 +1,160 @@
+/* Game Board Main Layout */
+.game-board {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+/* Nobles Section */
+.nobles-section {
+  border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+  padding-bottom: 20px;
+}
+
+.nobles-section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  color: #ffc107;
+}
+
+.nobles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 15px;
+}
+
+.noble-card {
+  background: linear-gradient(135deg, #2d3140 0%, #1a1a2e 100%);
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.noble-points {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.noble-requirement {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.gem-req {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* Cards Section */
+.cards-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+.card-level {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.card-level h3 {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  color: #667eea;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+}
+
+/* Actions Section */
+.actions-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.gem-pool-wrapper {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+}
+
+/* Players Section */
+.players-section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  padding-top: 30px;
+  border-top: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .game-board {
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .actions-section {
+    grid-template-columns: 1fr;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+
+  .players-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .game-board {
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .nobles-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .players-grid {
+    grid-template-columns: 1fr;
+  }
+}

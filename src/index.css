@@ -1,0 +1,232 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+/* Selection Styling */
+::selection {
+  background: rgba(102, 126, 234, 0.3);
+  color: #fff;
+}
+
+::-moz-selection {
+  background: rgba(102, 126, 234, 0.3);
+  color: #fff;
+}
+
+/* Gem Color Definitions */
+.gem-red {
+  --gem-color: #d32f2f;
+  --gem-light: #ff5252;
+}
+
+.gem-blue {
+  --gem-color: #1976d2;
+  --gem-light: #42a5f5;
+}
+
+.gem-green {
+  --gem-color: #388e3c;
+  --gem-light: #66bb6a;
+}
+
+.gem-white {
+  --gem-color: #f5f5f5;
+  --gem-light: #fff;
+}
+
+.gem-black {
+  --gem-color: #424242;
+  --gem-light: #666;
+}
+
+.gem-gold {
+  --gem-color: #ffc107;
+  --gem-light: #ffb300;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Utility Classes */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.mt-1 {
+  margin-top: 5px;
+}
+
+.mt-2 {
+  margin-top: 10px;
+}
+
+.mt-3 {
+  margin-top: 15px;
+}
+
+.mb-1 {
+  margin-bottom: 5px;
+}
+
+.mb-2 {
+  margin-bottom: 10px;
+}
+
+.mb-3 {
+  margin-bottom: 15px;
+}
+
+.p-1 {
+  padding: 5px;
+}
+
+.p-2 {
+  padding: 10px;
+}
+
+.p-3 {
+  padding: 15px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus Styles for Accessibility */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  html,
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .game-container,
+  .game-board,
+  .action-buttons,
+  .gem-pool {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}

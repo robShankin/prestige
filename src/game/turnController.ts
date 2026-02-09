@@ -1,0 +1,472 @@
+/**
+ * Turn flow orchestration and AI automation
+ */
+
+import type { GameState, GameAction, PlayerState, Card, Noble } from '../types';
+import { GameRules } from './rules';
+import { AIPlayer } from '../ai/aiPlayer';
+
+/**
+ * Game reducer type - will be imported from engine.ts (Agent 2)
+ * For now, we define the contract here and will use it once engine.ts is available
+ */
+export type GameReducer = (state: GameState, action: GameAction) => GameState;
+
+export class TurnController {
+  private gameReducer: GameReducer;
+  private aiPlayers: Map<number, AIPlayer> = new Map();
+
+  constructor(gameReducer: GameReducer, aiPlayers: Map<number, AIPlayer>) {
+    this.gameReducer = gameReducer;
+    this.aiPlayers = aiPlayers;
+  }
+
+  /**
+   * Execute a player action and handle subsequent AI turns if needed
+   * @param state Current game state
+   * @param action Action to execute
+   * @returns Final game state after all turns (human + chained AI turns) complete
+   * @throws Error if action is invalid
+   */
+  async executeTurn(state: GameState, action: GameAction): Promise<GameState> {
+    const playerIndex = action.playerIndex;
+
+    // Validate action is legal for current player
+    if (playerIndex !== state.currentPlayerIndex) {
+      throw new Error(
+        `Cannot execute action for player ${playerIndex}. Current player is ${state.currentPlayerIndex}`
+      );
+    }
+
+    const validActions = this.getValidActions(state, playerIndex);
+    const isValidAction = this.isActionValid(action, validActions);
+
+    if (!isValidAction) {
+      throw new Error(`Invalid action: ${action.type} for player ${playerIndex}`);
+    }
+
+    // Apply the action
+    let newState = this.gameReducer(state, action);
+
+    // Check for noble awards
+    newState = this.awardNobles(newState, playerIndex);
+
+    // Check end game condition
+    newState = this.checkEndGame(newState);
+
+    // If next player is AI, recursively execute AI turns
+    if (newState.gamePhase !== 'finished') {
+      newState = await this.executeAITurn(newState);
+    }
+
+    return newState;
+  }
+
+  /**
+   * Execute AI turns with automatic chaining
+   * @param state Current game state
+   * @returns Final game state after all AI turns complete
+   */
+  async executeAITurn(state: GameState): Promise<GameState> {
+    let currentState = state;
+
+    // Keep executing AI turns while the current player is AI and game is active
+    while (
+      currentState.gamePhase === 'active' ||
+      currentState.gamePhase === 'endGame'
+    ) {
+      const currentPlayer = currentState.players[currentState.currentPlayerIndex];
+
+      if (!currentPlayer.isAI) {
+        // Human player's turn, stop AI chain
+        break;
+      }
+
+      // Get AI player instance
+      const aiPlayer = this.aiPlayers.get(currentState.currentPlayerIndex);
+      if (!aiPlayer) {
+        // No AI player configured, end turn
+        currentState = this.advanceToNextPlayer(currentState);
+        continue;
+      }
+
+      // Add delay for UX (shows AI thinking)
+      await this.delay(500);
+
+      // Get AI decision
+      const aiAction = aiPlayer.decideAction(currentState, currentPlayer);
+
+      // Apply action via gameReducer
+      currentState = this.gameReducer(currentState, aiAction);
+
+      // Check for noble awards
+      currentState = this.awardNobles(currentState, currentState.currentPlayerIndex);
+
+      // Check end game condition
+      currentState = this.checkEndGame(currentState);
+
+      // If game is finished, break the loop
+      if (currentState.gamePhase === 'finished') {
+        break;
+      }
+    }
+
+    return currentState;
+  }
+
+  /**
+   * Check for game end conditions and handle end game phase
+   * @param state Current game state
+   * @returns Updated game state with gamePhase and winner set if game ended
+   */
+  checkEndGame(state: GameState): GameState {
+    // Check if any player has reached winning points
+    const winnerCandidate = state.players.find(p => p.points >= GameRules.WINNING_POINTS);
+
+    if (winnerCandidate && state.gamePhase === 'active') {
+      // Transition to endGame phase
+      let newState = { ...state, gamePhase: 'endGame' as const };
+
+      // Remember who triggered the end game
+      const triggerIndex = newState.currentPlayerIndex;
+
+      // Give remaining players one final turn each (round-robin once)
+      // All players except the one who triggered get one more turn
+      let playersRemaining = newState.players.length - 1;
+
+      while (playersRemaining > 0) {
+        // Advance to next player
+        newState = this.advanceToNextPlayer(newState) as typeof newState;
+
+        // Skip the player who triggered end game if we circle back
+        if (newState.currentPlayerIndex === triggerIndex) {
+          break;
+        }
+
+        // If this is an AI player in endGame, they still get a turn but we don't auto-execute here
+        // (that's handled by executeAITurn in the main game loop)
+        playersRemaining--;
+      }
+
+      // After all players got final turn, game is finished
+      if (newState.currentPlayerIndex === triggerIndex) {
+        // Determine winner (highest points)
+        const winner = newState.players.reduce((best, current) =>
+          current.points > best.points ? current : best
+        );
+
+        return { ...newState, gamePhase: 'finished' as const, winner };
+      }
+
+      return newState;
+    }
+
+    // Check if we should transition from endGame to finished
+    if (state.gamePhase === 'endGame') {
+      const triggerIndex = state.players.findIndex(p => p.points >= GameRules.WINNING_POINTS);
+
+      // If currentPlayerIndex cycles back to trigger player, game is finished
+      if (state.currentPlayerIndex === triggerIndex) {
+        // Determine winner (highest points)
+        const winner = state.players.reduce((best, current) =>
+          current.points > best.points ? current : best
+        );
+
+        return { ...state, gamePhase: 'finished' as const, winner };
+      }
+    }
+
+    return state;
+  }
+
+  /**
+   * Get all valid actions for a player
+   * @param state Current game state
+   * @param playerIndex Index of the player
+   * @returns Array of valid GameActions
+   */
+  getValidActions(state: GameState, playerIndex: number): GameAction[] {
+    const player = state.players[playerIndex];
+    const validActions: GameAction[] = [];
+
+    // Always include END_TURN
+    validActions.push({ type: 'END_TURN', playerIndex });
+
+    // Add gem taking actions
+    const gemTakeActions = this.getValidGemTakes(state, playerIndex, player);
+    validActions.push(...gemTakeActions);
+
+    // Add card reservation actions
+    const reservationActions = this.getValidReservations(state, playerIndex, player);
+    validActions.push(...reservationActions);
+
+    // Add card purchase actions
+    const purchaseActions = this.getValidPurchases(state, playerIndex, player);
+    validActions.push(...purchaseActions);
+
+    // Add noble claiming actions
+    const nobleActions = this.getValidNobleClaims(state, playerIndex, player);
+    validActions.push(...nobleActions);
+
+    return validActions;
+  }
+
+  /**
+   * Get all valid gem-taking actions for a player
+   */
+  private getValidGemTakes(state: GameState, playerIndex: number, player: PlayerState): GameAction[] {
+    const actions: GameAction[] = [];
+    const colors: (keyof Omit<typeof state.gemPool, 'gold'>)[] = ['red', 'blue', 'green', 'white', 'black'];
+
+    // Generate all possible combinations of gem takes (1-3 gems)
+    const availableGems = colors.filter(color => (state.gemPool[color] || 0) > 0);
+
+    // Single gem takes
+    for (const gem of availableGems) {
+      if (GameRules.canTakeGems(player.gems, [gem])) {
+        actions.push({
+          type: 'TAKE_GEMS',
+          playerIndex,
+          gems: [gem],
+        });
+      }
+    }
+
+    // Two gem takes (different colors)
+    for (let i = 0; i < availableGems.length; i++) {
+      for (let j = i + 1; j < availableGems.length; j++) {
+        const gems = [availableGems[i], availableGems[j]];
+        if (GameRules.canTakeGems(player.gems, gems)) {
+          actions.push({
+            type: 'TAKE_GEMS',
+            playerIndex,
+            gems,
+          });
+        }
+      }
+    }
+
+    // Three gem takes (different colors)
+    for (let i = 0; i < availableGems.length; i++) {
+      for (let j = i + 1; j < availableGems.length; j++) {
+        for (let k = j + 1; k < availableGems.length; k++) {
+          const gems = [availableGems[i], availableGems[j], availableGems[k]];
+          if (GameRules.canTakeGems(player.gems, gems)) {
+            actions.push({
+              type: 'TAKE_GEMS',
+              playerIndex,
+              gems,
+            });
+          }
+        }
+      }
+    }
+
+    return actions;
+  }
+
+  /**
+   * Get all valid card reservation actions for a player
+   */
+  private getValidReservations(state: GameState, playerIndex: number, player: PlayerState): GameAction[] {
+    if (player.reservedCards.length >= GameRules.MAX_RESERVED_CARDS) {
+      return [];
+    }
+
+    const actions: GameAction[] = [];
+    const allCards = [
+      ...state.displayedCards.level1,
+      ...state.displayedCards.level2,
+      ...state.displayedCards.level3,
+    ];
+
+    for (const card of allCards) {
+      actions.push({
+        type: 'RESERVE_CARD',
+        playerIndex,
+        card,
+      });
+    }
+
+    return actions;
+  }
+
+  /**
+   * Get all valid card purchase actions for a player
+   */
+  private getValidPurchases(state: GameState, playerIndex: number, player: PlayerState): GameAction[] {
+    const actions: GameAction[] = [];
+
+    // Displayed cards
+    const displayedCards = [
+      ...state.displayedCards.level1,
+      ...state.displayedCards.level2,
+      ...state.displayedCards.level3,
+    ];
+
+    for (const card of displayedCards) {
+      if (GameRules.canPurchaseCard(player, card)) {
+        actions.push({
+          type: 'PURCHASE_CARD',
+          playerIndex,
+          card,
+        });
+      }
+    }
+
+    // Reserved cards
+    for (const card of player.reservedCards) {
+      if (GameRules.canPurchaseCard(player, card)) {
+        actions.push({
+          type: 'PURCHASE_CARD',
+          playerIndex,
+          card,
+        });
+      }
+    }
+
+    return actions;
+  }
+
+  /**
+   * Get all valid noble claiming actions for a player
+   */
+  private getValidNobleClaims(state: GameState, playerIndex: number, player: PlayerState): GameAction[] {
+    const actions: GameAction[] = [];
+
+    for (const noble of state.nobles) {
+      // Check if player already has this noble
+      if (player.nobles.some(n => n.id === noble.id)) {
+        continue;
+      }
+
+      // Check if player meets noble requirements
+      if (GameRules.canAfford(player.gems, noble.requirement)) {
+        actions.push({
+          type: 'CLAIM_NOBLE',
+          playerIndex,
+          noble,
+        });
+      }
+    }
+
+    return actions;
+  }
+
+  /**
+   * Award nobles to a player if they meet requirements
+   * @param state Current game state
+   * @param playerIndex Index of player to check for noble awards
+   * @returns Updated game state with nobles awarded
+   */
+  private awardNobles(state: GameState, playerIndex: number): GameState {
+    const player = state.players[playerIndex];
+    let newState = state;
+
+    // Find nobles this player is eligible for
+    const eligibleNobles = state.nobles.filter(noble => {
+      // Skip if player already has this noble
+      if (player.nobles.some(n => n.id === noble.id)) {
+        return false;
+      }
+
+      // Check if player meets requirements (gem bonuses from purchased cards)
+      return GameRules.canAfford(player.gems, noble.requirement);
+    });
+
+    // Award each eligible noble
+    for (const noble of eligibleNobles) {
+      const newPlayers = newState.players.map((p, idx) => {
+        if (idx === playerIndex) {
+          return {
+            ...p,
+            nobles: [...p.nobles, noble],
+            points: p.points + noble.points,
+          };
+        }
+        return p;
+      });
+
+      // Remove noble from available pool
+      const newNobles = newState.nobles.filter(n => n.id !== noble.id);
+
+      newState = {
+        ...newState,
+        players: newPlayers,
+        nobles: newNobles,
+      };
+    }
+
+    return newState;
+  }
+
+  /**
+   * Advance to the next player's turn
+   */
+  private advanceToNextPlayer(state: GameState): GameState {
+    const nextIndex = (state.currentPlayerIndex + 1) % state.players.length;
+    return {
+      ...state,
+      currentPlayerIndex: nextIndex,
+    };
+  }
+
+  /**
+   * Check if an action matches any valid action
+   */
+  private isActionValid(action: GameAction, validActions: GameAction[]): boolean {
+    return validActions.some(validAction => {
+      if (validAction.type !== action.type) return false;
+
+      switch (action.type) {
+        case 'END_TURN': {
+          const vAction = validAction as typeof action;
+          return vAction.playerIndex === action.playerIndex;
+        }
+
+        case 'TAKE_GEMS': {
+          const vAction = validAction as typeof action;
+          return (
+            vAction.playerIndex === action.playerIndex &&
+            JSON.stringify(vAction.gems.sort()) ===
+            JSON.stringify(action.gems.sort())
+          );
+        }
+
+        case 'RESERVE_CARD': {
+          const vAction = validAction as typeof action;
+          return (
+            vAction.playerIndex === action.playerIndex &&
+            vAction.card.id === action.card.id
+          );
+        }
+
+        case 'PURCHASE_CARD': {
+          const vAction = validAction as typeof action;
+          return (
+            vAction.playerIndex === action.playerIndex &&
+            vAction.card.id === action.card.id
+          );
+        }
+
+        case 'CLAIM_NOBLE': {
+          const vAction = validAction as typeof action;
+          return (
+            vAction.playerIndex === action.playerIndex &&
+            vAction.noble.id === action.noble.id
+          );
+        }
+
+        default:
+          return false;
+      }
+    });
+  }
+
+  /**
+   * Utility function to delay execution (for UI feedback)
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}

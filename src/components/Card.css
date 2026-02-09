@@ -1,0 +1,213 @@
+/* Card Styling */
+.card {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Card States */
+.card-available {
+  cursor: default;
+}
+
+.card-available.card-clickable {
+  cursor: pointer;
+  border-color: #667eea;
+}
+
+.card-available.card-clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+  border-color: #764ba2;
+}
+
+.card-available.card-clickable:active {
+  transform: scale(0.98);
+}
+
+.card-reserved {
+  opacity: 0.6;
+  border-color: #ffc107;
+}
+
+.card-purchased {
+  opacity: 0.3;
+  border-color: #4caf50;
+}
+
+/* Card Points Badge */
+.card-points {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #000;
+  font-weight: bold;
+  font-size: 0.9rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+/* Card Content */
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Gem Bonus Bar */
+.gem-bonus-bar {
+  height: 4px;
+  border-radius: 2px;
+  margin-bottom: 8px;
+}
+
+.gem-bonus-bar.gem-red {
+  background: #d32f2f;
+}
+
+.gem-bonus-bar.gem-blue {
+  background: #1976d2;
+}
+
+.gem-bonus-bar.gem-green {
+  background: #388e3c;
+}
+
+.gem-bonus-bar.gem-white {
+  background: #f5f5f5;
+}
+
+.gem-bonus-bar.gem-black {
+  background: #212121;
+}
+
+.gem-bonus-bar.gem-gold {
+  background: #ffc107;
+}
+
+/* Card Cost Display */
+.card-cost {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.cost-gem {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: #fff;
+  position: relative;
+}
+
+.cost-gem.gem-red {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+}
+
+.cost-gem.gem-blue {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}
+
+.cost-gem.gem-green {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+}
+
+.cost-gem.gem-white {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  color: #000;
+}
+
+.cost-gem.gem-black {
+  background: linear-gradient(135deg, #424242 0%, #212121 100%);
+}
+
+.cost-gem.gem-gold {
+  background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%);
+  color: #000;
+}
+
+.cost-number {
+  font-size: 0.75rem;
+}
+
+/* Card Overlays */
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+
+.reserved-overlay {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  backdrop-filter: blur(2px);
+}
+
+.purchased-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  color: #ccc;
+  backdrop-filter: blur(2px);
+}
+
+/* Card Levels - Color Accents */
+.card-level-1 {
+  border-top: 3px solid #4caf50;
+}
+
+.card-level-2 {
+  border-top: 3px solid #2196f3;
+}
+
+.card-level-3 {
+  border-top: 3px solid #ff9800;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card {
+    padding: 6px;
+  }
+
+  .card-points {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+  }
+
+  .cost-gem {
+    width: 28px;
+    height: 28px;
+    font-size: 0.6rem;
+  }
+}
