@@ -73,6 +73,7 @@ export const Game: React.FC<GameProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const [turnStartState, setTurnStartState] = useState<GameState | null>(null);
   const [hasPendingAction, setHasPendingAction] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'menu' | 'new' | null>(null);
 
   const handleStartGame = (opponents: 1 | 2 | 3, difficulties: Array<'easy' | 'medium' | 'hard'>) => {
     setSelectedOpponents(opponents);
@@ -116,6 +117,14 @@ export const Game: React.FC<GameProps> = () => {
     setIsLoading(false);
     setTurnStartState(null);
     setHasPendingAction(false);
+  };
+
+  const handleConfirmNavigation = (action: 'menu' | 'new') => {
+    if (selectedOpponents !== null && gameState && gameState.gamePhase !== 'finished') {
+      setConfirmAction(action);
+      return;
+    }
+    handleRestart();
   };
 
   useEffect(() => {
@@ -198,6 +207,9 @@ export const Game: React.FC<GameProps> = () => {
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const isCurrentPlayerAI = currentPlayer.isAI;
+  const isDiscarding =
+    Boolean(gameState.pendingDiscard) &&
+    gameState.pendingDiscard.playerIndex === gameState.currentPlayerIndex;
 
   return (
     <div className="game-container">
@@ -205,11 +217,27 @@ export const Game: React.FC<GameProps> = () => {
         <div className="header-top">
           <h1>♔ Prestige</h1>
           <div className="header-buttons">
-            <button className="btn-restart" onClick={handleRestart} title="Start a new game">
+            <button className="btn-restart" onClick={() => handleConfirmNavigation('new')} title="Start a new game">
               🔄 New Game
             </button>
-            <button className="btn-quit" onClick={handleRestart} title="Return to setup">
+            <button className="btn-quit" onClick={() => handleConfirmNavigation('menu')} title="Return to setup">
               ✕ Menu
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleAction({ type: 'END_TURN', playerIndex: gameState.currentPlayerIndex })}
+              disabled={isLoading || isCurrentPlayerAI || isDiscarding || !hasPendingAction}
+              title="End your turn"
+            >
+              End Turn
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={handleUndo}
+              disabled={isLoading || isCurrentPlayerAI || !hasPendingAction}
+              title="Undo your action"
+            >
+              Undo
             </button>
           </div>
         </div>
@@ -224,13 +252,38 @@ export const Game: React.FC<GameProps> = () => {
 
       {error && <div className="error-message">{error}</div>}
 
+      {confirmAction && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal">
+            <h3>Return to Menu?</h3>
+            <p>Your current game will be lost.</p>
+            <div className="confirm-actions">
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setConfirmAction(null);
+                  handleRestart();
+                }}
+              >
+                Yes
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirmAction(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <GameBoard
         gameState={gameState}
         onAction={handleAction}
         isLoading={isLoading}
         isCurrentPlayerAI={isCurrentPlayerAI}
         hasPendingAction={hasPendingAction}
-        onUndo={handleUndo}
       />
 
       {isLoading && (

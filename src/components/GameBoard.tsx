@@ -18,7 +18,6 @@ interface GameBoardProps {
   isLoading: boolean;
   isCurrentPlayerAI: boolean;
   hasPendingAction: boolean;
-  onUndo: () => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -27,7 +26,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
   isLoading,
   isCurrentPlayerAI,
   hasPendingAction,
-  onUndo,
 }) => {
   const turnController = useMemo(() => new TurnController(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -84,8 +82,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Card Levels */}
       <section className="cards-section">
         {([3, 2, 1] as const).map((level) => (
-          <div key={`level-${level}`} className="card-level">
-            <h3>Level {level}</h3>
+          <div key={`level-${level}`} className="card-row">
             <div className="card-grid">
               {gameState.displayedCards[`level${level}` as const].map((card: any) => (
                 <Card
@@ -218,9 +215,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
           onAction={onAction}
           disabled={disableActions}
           disableNonEndActions={disableNonEndActions}
-          disableEndTurn={isDiscarding || isCurrentPlayerAI || isLoading || !hasPendingAction}
-          canUndo={hasPendingAction && isCurrentPlayer}
-          onUndo={onUndo}
           isAITurn={isCurrentPlayerAI}
         />
       </section>

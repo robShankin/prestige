@@ -1,8 +1,11 @@
 /* Game Board Main Layout */
 .game-board {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 30px;
+  grid-template-columns: minmax(260px, 1fr) minmax(520px, 2fr) minmax(260px, 1fr);
+  grid-template-areas:
+    "players nobles actions"
+    "players cards actions";
+  gap: 20px;
   background: rgba(0, 0, 0, 0.3);
   padding: 30px;
   border-radius: 12px;
@@ -11,8 +14,9 @@
 
 /* Nobles Section */
 .nobles-section {
+  grid-area: nobles;
   border-bottom: 2px solid rgba(102, 126, 234, 0.3);
-  padding-bottom: 20px;
+  padding-bottom: 12px;
 }
 
 .nobles-section h2 {
@@ -84,37 +88,30 @@
 
 /* Cards Section */
 .cards-section {
+  grid-area: cards;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 25px;
+  gap: 12px;
 }
 
-.card-level {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 20px;
-  border-radius: 8px;
-  border-left: 4px solid #667eea;
-}
-
-.card-level h3 {
-  font-size: 1.1rem;
-  margin-bottom: 15px;
-  color: #667eea;
+.card-row {
+  padding: 0;
 }
 
 .card-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 /* Actions Section */
 .actions-section {
+  grid-area: actions;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  padding-top: 20px;
-  border-top: 2px solid rgba(102, 126, 234, 0.3);
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding-top: 0;
+  border-top: none;
 }
 
 .discard-panel {
@@ -199,8 +196,8 @@
 .players-section h2 {
   font-size: 1.3rem;
   margin-bottom: 20px;
-  padding-top: 30px;
-  border-top: 2px solid rgba(102, 126, 234, 0.3);
+  padding-top: 0;
+  border-top: none;
 }
 
 .players-grid {
@@ -209,9 +206,19 @@
   gap: 20px;
 }
 
+.players-section {
+  grid-area: players;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .game-board {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "nobles"
+      "cards"
+      "actions"
+      "players";
     gap: 20px;
     padding: 20px;
   }
