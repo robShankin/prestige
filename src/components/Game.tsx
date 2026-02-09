@@ -9,7 +9,7 @@
  * - Render logic (loading → game board → game over)
  */
 
-import React, { useState, useReducer, useEffect } from 'react';
+import React, { useState, useReducer } from 'react';
 import type { GameState, GameAction } from '../types';
 import { initializeGame, gameReducer } from '../game/engine';
 import { TurnController } from '../game/turnController';
@@ -63,7 +63,8 @@ function gameStateReducer(state: GameState | null, action: GameAction | { type: 
  * @example
  * <Game numberOfOpponents={2} />  // Game with 1 human + 2 AI
  */
-export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
+export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedOpponents, setSelectedOpponents] = useState<1 | 2 | 3 | null>(null);
   const [gameState, dispatch] = useReducer(gameStateReducer, null as GameState | null);
   const [isLoading, setIsLoading] = useState(false);
