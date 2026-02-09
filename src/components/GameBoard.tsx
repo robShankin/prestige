@@ -20,7 +20,8 @@ interface GameBoardProps {
 
 const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, isCurrentPlayerAI }) => {
   const turnController = useMemo(() => new TurnController(
-    (state, action) => state,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_state, _action) => _state,
     new Map()
   ), []);
 
@@ -43,10 +44,10 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
               <div className="noble-points">{noble.points}</div>
               <div className="noble-requirement">
                 {Object.entries(noble.requirement)
-                  .filter(([_, count]) => (count || 0) > 0)
+                  .filter(([, count]) => (count || 0) > 0)
                   .map(([color, count]) => (
                     <div key={color} className={`gem-req gem-${color}`}>
-                      {count}
+                      {count || 0}
                     </div>
                   ))}
               </div>
@@ -63,15 +64,15 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
             <div className="card-grid">
               {gameState.displayedCards[`level${level}` as const].map((card: any) => (
                 <Card
-                  key={card.id}
-                  card={card}
+                  key={(card as any).id}
+                  card={card as any}
                   onClick={() => {
                     // Try purchase first, then reserve
                     const purchaseAction = validActions.find(
-                      (a) => a.type === 'PURCHASE_CARD' && 'card' in a && a.card.id === card.id
+                      (a) => a.type === 'PURCHASE_CARD' && 'card' in a && (a as any).card.id === (card as any).id
                     );
                     const reserveAction = validActions.find(
-                      (a) => a.type === 'RESERVE_CARD' && 'card' in a && a.card.id === card.id
+                      (a) => a.type === 'RESERVE_CARD' && 'card' in a && (a as any).card.id === (card as any).id
                     );
 
                     if (purchaseAction) {
@@ -88,7 +89,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
                       (a) =>
                         (a.type === 'PURCHASE_CARD' || a.type === 'RESERVE_CARD') &&
                         'card' in a &&
-                        a.card.id === card.id
+                        (a as any).card.id === (card as any).id
                     )
                   }
                 />

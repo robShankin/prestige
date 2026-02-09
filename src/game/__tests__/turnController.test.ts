@@ -457,4 +457,103 @@ describe('TurnController', () => {
       expect(nobleActions.length).toBe(0);
     });
   });
+
+  describe('Complex scenarios', () => {
+    it('should transition from setup to active game phase', async () => {
+      const state = createMockGameState({
+        currentPlayerIndex: 1,
+        gamePhase: 'setup',
+        players: [
+          createMockPlayerState({ id: 'player1', isAI: false }),
+          createMockPlayerState({ id: 'player2', isAI: false }),
+        ],
+      });
+
+      const action: GameAction = { type: 'END_TURN', playerIndex: 1 };
+
+      // The mockGameReducer we have should handle this
+      const result = mockGameReducer(state, action);
+      expect(result.currentPlayerIndex).toBe(0);
+    });
+
+    it('should allow reservation when gems available', () => {
+      const card = createMockCard();
+      const state = createMockGameState({
+        players: [
+          createMockPlayerState({
+            id: 'player1',
+            reservedCards: [],
+          }),
+        ],
+        displayedCards: {
+          level1: [card],
+          level2: [],
+          level3: [],
+        },
+        gemPool: { red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 5 },
+      });
+
+      const actions = turnController.getValidActions(state, 0);
+      const reservations = actions.filter(a => a.type === 'RESERVE_CARD');
+
+      expect(reservations.length).toBeGreaterThan(0);
+    });
+
+    it('should include gem actions in valid actions list', () => {
+      const state = createMockGameState({
+        players: [
+          createMockPlayerState({
+            id: 'player1',
+            gems: { red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 },
+          }),
+        ],
+        gemPool: { red: 4, blue: 4, green: 4, white: 4, black: 4, gold: 5 },
+      });
+
+      const actions = turnController.getValidActions(state, 0);
+      const gemActions = actions.filter(a => a.type === 'TAKE_GEMS');
+
+      expect(gemActions.length).toBeGreaterThan(0);
+    });
+
+    it('should handle multiple player game', () => {
+      const state = createMockGameState({
+        players: [
+          createMockPlayerState({ id: 'player1' }),
+          createMockPlayerState({ id: 'player2' }),
+          createMockPlayerState({ id: 'player3' }),
+        ],
+      });
+
+      const actions = turnController.getValidActions(state, 0);
+      expect(actions.length).toBeGreaterThan(0);
+    });
+
+    it('should provide valid actions for all action types', () => {
+      const card = createMockCard({ id: 'card-1', cost: {} });
+      const noble = createMockNoble({ id: 'noble-1', requirement: { red: 0 } });
+      const state = createMockGameState({
+        players: [
+          createMockPlayerState({
+            id: 'player1',
+            gems: { red: 5, blue: 5, green: 5, white: 5, black: 5, gold: 5 },
+            reservedCards: [],
+          }),
+        ],
+        gemPool: { red: 4, blue: 4, green: 4, white: 4, black: 4, gold: 5 },
+        displayedCards: {
+          level1: [card],
+          level2: [],
+          level3: [],
+        },
+        nobles: [noble],
+      });
+
+      const actions = turnController.getValidActions(state, 0);
+      const types = new Set(actions.map(a => a.type));
+
+      expect(types.has('END_TURN')).toBe(true);
+      expect(types.has('TAKE_GEMS') || types.has('RESERVE_CARD')).toBe(true);
+    });
+  });
 });

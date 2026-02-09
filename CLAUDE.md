@@ -239,9 +239,64 @@ All strategies share helper methods for card evaluation, gem planning, and oppon
 5. **UI Board**: Display cards, gem pools, player scores, and action buttons
 6. **AI Training**: Profile AI strategies and tune difficulty parameters
 
+## Performance Considerations
+
+### Time Complexity
+- State Updates: O(n) where n = 90 cards + 10 nobles
+- AI Hard Difficulty: ~800ms per decision (includes 500ms delay + 300ms planning)
+- Component Render: Full re-render acceptable (~100ms on modern hardware)
+
+### Memory Usage
+- Game State: ~2MB for complete game state snapshot
+- Card/Noble Lookups: Use Map for O(1) access when needed
+- AI Decision: No deep recursion (lookahead is limited)
+
+### Optimizations
+- Immutable updates prevent accidental mutations
+- useReducer provides built-in optimization boundaries
+- Memoized component helpers where needed (consider React.memo for Card components)
+- Lazy load AI decision (only when needed)
+
+## Error Handling
+
+- **Invalid Actions**: GameRules validation throws descriptive errors before reducer
+- **Reducer Errors**: Exhaustive type checking with `never` type prevents unhandled actions
+- **AI Errors**: Fallback to END_TURN action if AI decision fails
+- **UI Errors**: Game component catches and displays errors; consider error boundary (future)
+- **Type Safety**: Strict TypeScript prevents runtime type errors
+
+## Extensibility Guide
+
+To add new features following project architecture:
+
+1. **New GameAction type**:
+   - Add to `GameAction` union in `src/types/index.ts`
+   - Ensure discriminated union with required properties
+
+2. **New validation rule**:
+   - Add method to `GameRules` class (static method)
+   - Test with 100% coverage
+
+3. **New reducer logic**:
+   - Add case to switch in `gameReducer()`
+   - Call validation method before state update
+   - Return immutable new state
+
+4. **New AI strategy**:
+   - Add method to `AIPlayer` class
+   - Call from `decideAction()` based on difficulty
+   - Use helper methods for card/gem evaluation
+
+5. **New UI component**:
+   - Create in `src/components/`
+   - Accept state + onAction callback
+   - Dispatch actions via parent callback
+
 ## Debugging Tips
 
 - Use `npm run test:watch` during development to catch type and logic errors immediately
 - Run `npm run type-check` before committing to catch TypeScript errors
 - Check `GameRules` methods when debugging gem/card logic
 - Add debug logging in `AIPlayer.decideAction()` to trace AI decision-making
+- Use React DevTools to inspect component state and re-renders
+- Enable strict mode in development for additional warnings

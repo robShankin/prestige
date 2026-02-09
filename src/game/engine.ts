@@ -6,7 +6,6 @@ import type {
   GameState,
   GameAction,
   PlayerState,
-  Card,
   GemCost,
   Noble,
   Color,
@@ -22,9 +21,20 @@ import {
 } from './data';
 
 /**
- * Initialize a new game with specified number of players
- * @param playerCount - Number of total players (2-4: 1 human + 1-3 AI)
+ * Initialize a new game with specified number of players.
+ *
+ * Creates a ready-to-play game state with:
+ * - Player objects (1 human + 1-3 AI opponents)
+ * - Shuffled card decks (levels 1-3)
+ * - Random noble selection (playerCount + 1 nobles)
+ * - Gem pool initialized based on player count
+ *
+ * @param playerCount - Number of total players (must be 2-4: 1 human + 1-3 AI)
  * @returns Initialized GameState ready for gameplay
+ * @throws Error if playerCount < 2 or > 4
+ *
+ * @example
+ * const gameState = initializeGame(3); // 1 human + 2 AI players
  */
 export function initializeGame(playerCount: number): GameState {
   if (playerCount < 2 || playerCount > 4) {
@@ -102,10 +112,30 @@ export function initializeGame(playerCount: number): GameState {
 }
 
 /**
- * Main game reducer to handle all game actions
+ * Main game reducer to handle all game actions.
+ *
+ * Pure function that takes current state and an action, returning a new immutable
+ * state with the action applied. This is the single source of truth for game state
+ * transitions. All gem/card/point changes flow through this reducer.
+ *
  * @param state - Current GameState
- * @param action - GameAction to process
- * @returns New immutable GameState
+ * @param action - GameAction to process (discriminated union)
+ * @returns New immutable GameState with action applied
+ * @throws Error if action is invalid (delegates to handlers)
+ *
+ * Supported actions:
+ * - TAKE_GEMS: Player collects gems from pool
+ * - RESERVE_CARD: Player reserves a card and gets 1 gold
+ * - PURCHASE_CARD: Player buys a card with gems
+ * - CLAIM_NOBLE: Player claims a noble (usually auto via END_TURN)
+ * - END_TURN: Player ends turn, advances to next player
+ *
+ * @example
+ * const newState = gameReducer(state, {
+ *   type: 'PURCHASE_CARD',
+ *   playerIndex: 0,
+ *   card: selectedCard
+ * });
  */
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
@@ -119,14 +149,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return handleClaimNoble(state, action);
     case 'END_TURN':
       return handleEndTurn(state, action);
-    default:
+    default: {
       const _exhaustive: never = action;
       return _exhaustive;
+    }
   }
 }
 
 /**
- * Handle TAKE_GEMS action
+ * Handle TAKE_GEMS action.
+ *
+ * Updates player gems and removes from pool. Validates that player doesn't exceed
+ * MAX_GEMS_PER_PLAYER after taking. Used for both 2-of-same and 3-different gem takes.
+ *
+ * @param state - Current GameState
+ * @param action - TAKE_GEMS action with gems array
+ * @returns New GameState with updated gems
+ * @throws Error if validation fails
  */
 function handleTakeGems(
   state: GameState,
@@ -209,7 +248,15 @@ function handleTakeGems(
 }
 
 /**
- * Handle RESERVE_CARD action
+ * Handle RESERVE_CARD action.
+ *
+ * Reserves a card from the displayed cards, removes it from display, refills from deck,
+ * and gives player 1 gold gem. Max 3 reserved cards per player.
+ *
+ * @param state - Current GameState
+ * @param action - RESERVE_CARD action with card to reserve
+ * @returns New GameState with reserved card and refilled display
+ * @throws Error if player already has 3 reserved cards or card not in display
  */
 function handleReserveCard(
   state: GameState,
@@ -293,7 +340,19 @@ function handleReserveCard(
 }
 
 /**
- * Handle PURCHASE_CARD action
+ * Handle PURCHASE_CARD action.
+ *
+ * Purchases a card from displayed or reserved cards. Spends gems (colored + gold),
+ * removes card from game, adds to player's purchased cards, awards points.
+ * Refills display from deck if card was on display.
+ *
+ * Card must be affordable (checked before calling). Gem discount is calculated
+ * from purchased cards automatically.
+ *
+ * @param state - Current GameState
+ * @param action - PURCHASE_CARD action with card to purchase
+ * @returns New GameState with card purchased and gems spent
+ * @throws Error if player can't afford card or card not found
  */
 function handlePurchaseCard(
   state: GameState,
@@ -311,7 +370,7 @@ function handlePurchaseCard(
   }
 
   // Calculate gem discount based on purchased cards
-  const discount = GameRules.calculateGemDiscount(playerState, action.card.cost);
+  const discount = GameRules.calculateGemDiscount(playerState);
 
   // Calculate gems to spend
   const gemsToSpend = calculateGemsToSpend(playerState.gems, action.card.cost, discount);
@@ -395,7 +454,16 @@ function handlePurchaseCard(
 }
 
 /**
- * Handle CLAIM_NOBLE action
+ * Handle CLAIM_NOBLE action.
+ *
+ * Awards a noble to a player, adding points and removing noble from game state.
+ * Typically called automatically by END_TURN via TurnController when player
+ * has sufficient gem bonuses.
+ *
+ * @param state - Current GameState
+ * @param action - CLAIM_NOBLE action with noble to claim
+ * @returns New GameState with noble claimed and points awarded
+ * @throws Error if player doesn't meet noble requirement
  */
 function handleClaimNoble(
   state: GameState,
@@ -434,7 +502,18 @@ function handleClaimNoble(
 }
 
 /**
- * Handle END_TURN action
+ * Handle END_TURN action.
+ *
+ * Ends current player's turn. Auto-awards all eligible nobles, advances to next player,
+ * and checks for game phase transitions:
+ * - setup → active (after first full round)
+ * - active → endGame (when someone reaches WINNING_POINTS)
+ *
+ * Called by player or via TurnController.
+ *
+ * @param state - Current GameState
+ * @param action - END_TURN action
+ * @returns New GameState with turn advanced and phases checked
  */
 function handleEndTurn(
   state: GameState,
@@ -474,7 +553,14 @@ function handleEndTurn(
 }
 
 /**
- * Fisher-Yates shuffle algorithm
+ * Fisher-Yates shuffle algorithm.
+ *
+ * Shuffles an array in-place using cryptographically secure random.
+ * Creates copy to avoid mutating input array.
+ *
+ * @param deck - Array to shuffle
+ * @returns New shuffled copy of deck
+ * @internal
  */
 function shuffleDeck<T>(deck: T[]): T[] {
   const result = [...deck];
@@ -486,7 +572,14 @@ function shuffleDeck<T>(deck: T[]): T[] {
 }
 
 /**
- * Select random nobles from pool
+ * Select random nobles from pool.
+ *
+ * Uses shuffleDeck to randomly select N nobles from the pool.
+ *
+ * @param nobles - Available nobles to choose from
+ * @param count - Number of nobles to select (typically playerCount + 1)
+ * @returns Selected nobles array
+ * @internal
  */
 function selectRandomNobles(nobles: Noble[], count: number): Noble[] {
   const shuffled = shuffleDeck(nobles);
@@ -494,7 +587,16 @@ function selectRandomNobles(nobles: Noble[], count: number): Noble[] {
 }
 
 /**
- * Calculate gems needed to spend for a purchase, accounting for discounts
+ * Calculate gems needed to spend for a purchase, accounting for discounts.
+ *
+ * Determines how many colored vs gold gems must be spent to afford a card.
+ * Prioritizes spending colored gems first, then uses gold for remainder.
+ *
+ * @param playerGems - Player's current gem collection
+ * @param cost - Card's gem cost requirement
+ * @param discount - Gem discount from purchased cards
+ * @returns Gem amounts to spend (colored + gold)
+ * @internal
  */
 function calculateGemsToSpend(
   playerGems: GemCost & { gold: number },
@@ -530,7 +632,14 @@ function calculateGemsToSpend(
 }
 
 /**
- * Subtract gems from a gem pool
+ * Subtract gems from a gem pool.
+ *
+ * Safe gem arithmetic with floor at 0 (never negative).
+ *
+ * @param gems - Gem pool to subtract from
+ * @param toSubtract - Gems to remove
+ * @returns New gem pool with values subtracted
+ * @internal
  */
 function subtractGems(
   gems: GemCost & { gold: number },
@@ -547,7 +656,14 @@ function subtractGems(
 }
 
 /**
- * Add gems to a gem pool
+ * Add gems to a gem pool.
+ *
+ * Safe gem arithmetic (no upper limit here, limit checked elsewhere).
+ *
+ * @param gems - Gem pool to add to
+ * @param toAdd - Gems to add
+ * @returns New gem pool with values added
+ * @internal
  */
 function addGems(
   gems: GemCost & { gold: number },

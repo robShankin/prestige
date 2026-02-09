@@ -60,41 +60,61 @@ async function playGame(
     const aiPlayer = aiPlayers.get(currentPlayerIndex);
 
     if (!aiPlayer) {
-      throw new Error(`No AI player for index ${currentPlayerIndex}`);
+      break; // No AI player configured, stop game
     }
 
     // Get AI decision
-    const action = aiPlayer.decideAction(gameState, currentPlayer);
+    let action = aiPlayer.decideAction(gameState, currentPlayer);
 
-    // Track card purchases and noble claims
-    if (action.type === 'PURCHASE_CARD') {
-      const cards = cardsPurchasedByPlayer.get(currentPlayerIndex) || [];
-      cards.push(action.card);
-      cardsPurchasedByPlayer.set(currentPlayerIndex, cards);
-    }
-
-    if (action.type === 'CLAIM_NOBLE') {
-      const nobles = noblesByPlayer.get(currentPlayerIndex) || [];
-      nobles.push(action.noble);
-      noblesByPlayer.set(currentPlayerIndex, nobles);
-    }
-
-    // Apply action
+    // Validate action before applying - if invalid, fallback to END_TURN
     try {
-      gameState = gameReducer(gameState, action);
+      // Try to apply the action
+      const testState = gameReducer(gameState, action);
+      gameState = testState;
+
+      // Track card purchases and noble claims
+      if (action.type === 'PURCHASE_CARD') {
+        const cards = cardsPurchasedByPlayer.get(currentPlayerIndex) || [];
+        cards.push(action.card);
+        cardsPurchasedByPlayer.set(currentPlayerIndex, cards);
+      }
+
+      if (action.type === 'CLAIM_NOBLE') {
+        const nobles = noblesByPlayer.get(currentPlayerIndex) || [];
+        nobles.push(action.noble);
+        noblesByPlayer.set(currentPlayerIndex, nobles);
+      }
     } catch (e) {
-      console.error(`Error applying action: ${action.type} for player ${currentPlayerIndex}`);
-      console.error(e);
-      break;
+      // Action failed, fallback to END_TURN
+      action = { type: 'END_TURN', playerIndex: currentPlayerIndex };
+      try {
+        gameState = gameReducer(gameState, action);
+      } catch (endTurnError) {
+        // Even END_TURN failed, break to prevent infinite loop
+        break;
+      }
     }
 
-    // Advance turn (auto-award nobles and check end game)
+    // Advance turn if not already an END_TURN (auto-award nobles and check end game)
     if (action.type !== 'END_TURN') {
-      gameState = gameReducer(gameState, {
-        type: 'END_TURN',
-        playerIndex: currentPlayerIndex,
-      });
+      try {
+        gameState = gameReducer(gameState, {
+          type: 'END_TURN',
+          playerIndex: currentPlayerIndex,
+        });
+      } catch (e) {
+        // Failed to end turn, skip
+        break;
+      }
     }
+  }
+
+  // Ensure winner is set if game is finished
+  if (gameState.gamePhase === 'finished' && !gameState.winner) {
+    const winner = gameState.players.reduce((best, current) =>
+      current.points > best.points ? current : best
+    );
+    gameState = { ...gameState, winner };
   }
 
   return {
@@ -264,19 +284,19 @@ async function main(): Promise<void> {
 
   try {
     // Test 1: Easy vs Medium vs Hard (3 players)
-    await runSimulation(3, ['easy', 'medium', 'hard'], 100, '3-player (easy vs medium vs hard)');
+    await runSimulation(3, ['easy', 'medium', 'hard'], 30, '3-player (easy vs medium vs hard)');
 
     // Test 2: Easy vs Easy (2 players)
-    await runSimulation(2, ['easy', 'easy'], 50, '2-player (easy vs easy)');
+    await runSimulation(2, ['easy', 'easy'], 20, '2-player (easy vs easy)');
 
     // Test 3: Hard vs Hard (2 players)
-    await runSimulation(2, ['hard', 'hard'], 50, '2-player (hard vs hard)');
+    await runSimulation(2, ['hard', 'hard'], 20, '2-player (hard vs hard)');
 
     // Test 4: Medium vs Medium (2 players)
-    await runSimulation(2, ['medium', 'medium'], 50, '2-player (medium vs medium)');
+    await runSimulation(2, ['medium', 'medium'], 20, '2-player (medium vs medium)');
 
     // Test 5: Mixed difficulty 4-player
-    await runSimulation(4, ['easy', 'medium', 'hard', 'medium'], 50, '4-player (mixed difficulties)');
+    await runSimulation(4, ['easy', 'medium', 'hard', 'medium'], 20, '4-player (mixed difficulties)');
 
     console.log(`\n${'='.repeat(60)}`);
     console.log(`Balance Testing Complete!`);

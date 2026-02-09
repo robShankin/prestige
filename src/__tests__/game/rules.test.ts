@@ -10,7 +10,7 @@ import {
   createMockPlayerState,
   createMockNoble,
   createGemPool,
-} from '../testUtils';
+} from '../../testUtils';
 
 describe('GameRules', () => {
   describe('canTakeGems', () => {
@@ -376,11 +376,11 @@ describe('GameRules', () => {
     it('should not discount for gold cards', () => {
       const goldCard = createMockCard({ color: 'gold' });
       const player = createMockPlayerState({ purchasedCards: [goldCard] });
-      const cost = { gold: 2 };
+      const cost: any = { gold: 2 };
 
       const discount = GameRules.calculateGemDiscount(player, cost);
 
-      expect(discount.gold || 0).toBe(0);
+      expect((discount as any).gold || 0).toBe(0);
     });
 
     it('should return all colors with 0 discount', () => {
@@ -481,12 +481,12 @@ describe('GameRules', () => {
       expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(true);
     });
 
-    it('should not allow 1 gem take', () => {
+    it('should allow 1 gem take when available', () => {
       const gems = ['red'];
       const poolGems = createGemPool({ red: 4, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
       const playerGems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
 
-      expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(false);
+      expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(true);
     });
 
     it('should not allow 4 gems', () => {

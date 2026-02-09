@@ -1,5 +1,11 @@
 /**
- * Main Game component - renders the Splendor game UI
+ * Main Game component - renders the Splendor game UI.
+ *
+ * Root React component that manages:
+ * - Game state via useReducer
+ * - Game initialization and AI setup
+ * - Action execution through TurnController
+ * - Render logic (loading → game board → game over)
  */
 
 import React, { useState, useReducer, useEffect } from 'react';
@@ -11,11 +17,26 @@ import GameBoard from './GameBoard';
 import GameOver from './GameOver';
 import './Game.css';
 
+/**
+ * Props for the Game component.
+ *
+ * @property numberOfOpponents - Number of AI opponents (1-3)
+ */
 interface GameProps {
   numberOfOpponents: 1 | 2 | 3;
 }
 
-// Wrapper reducer to handle initialization
+/**
+ * Wrapper reducer to handle both game actions and initialization.
+ *
+ * Supports INIT_GAME action for setup and regular GameActions for gameplay.
+ *
+ * @param state - Current game state (null during init)
+ * @param action - Either INIT_GAME or a GameAction
+ * @returns New game state or null if not initialized
+ *
+ * @internal
+ */
 function gameStateReducer(state: GameState | null, action: GameAction | { type: 'INIT_GAME'; gameState: GameState }): GameState | null {
   if ('gameState' in action) {
     return action.gameState;
@@ -24,6 +45,22 @@ function gameStateReducer(state: GameState | null, action: GameAction | { type: 
   return gameReducer(state, action as GameAction);
 }
 
+/**
+ * Game component - Main entry point for the Splendor game.
+ *
+ * Manages game lifecycle:
+ * - Initializes game and AI players on mount
+ * - Handles user actions and updates state
+ * - Displays loading state, game board, or game over screen
+ * - Shows current player and game phase
+ * - Handles errors gracefully
+ *
+ * @param props - GameProps with numberOfOpponents
+ * @returns React component tree
+ *
+ * @example
+ * <Game numberOfOpponents={2} />  // Game with 1 human + 2 AI
+ */
 export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
   const totalPlayers = numberOfOpponents + 1;
   const [gameState, dispatch] = useReducer(gameStateReducer, null as GameState | null);
@@ -55,7 +92,7 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
 
       // Execute the action through the turn controller
       const newState = await turnController.executeTurn(gameState, action);
-      dispatch({ type: 'SET_STATE' as any, gameState: newState });
+      dispatch({ type: 'SET_STATE', gameState: newState } as any);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);

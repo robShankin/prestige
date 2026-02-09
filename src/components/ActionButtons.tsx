@@ -50,8 +50,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, d
             <div className="action-group">
               <div className="group-label">Purchase Cards</div>
               {actionsByType.PURCHASE_CARD.slice(0, 5).map((action, idx) => {
-                const card = 'card' in action ? (action as any).card : null;
-                const points = card?.points || 0;
+                const card = 'card' in action ? ((action as unknown) as any).card : null;
+                const points = (card as any)?.points || 0;
                 return (
                   <button
                     key={`purchase-${idx}`}
@@ -74,7 +74,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, d
             <div className="action-group">
               <div className="group-label">Reserve Cards</div>
               {actionsByType.RESERVE_CARD.slice(0, 5).map((action, idx) => {
-                const card = 'card' in action ? (action as any).card : null;
+                const card = 'card' in action ? ((action as unknown) as any).card : null;
                 return (
                   <button
                     key={`reserve-${idx}`}
@@ -97,7 +97,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, d
             <div className="action-group">
               <div className="group-label">Claim Nobles</div>
               {actionsByType.CLAIM_NOBLE.map((action, idx) => {
-                const noble = 'noble' in action ? (action as any).noble : null;
+                const noble = 'noble' in action ? ((action as unknown) as any).noble : null;
                 return (
                   <button
                     key={`noble-${idx}`}

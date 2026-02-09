@@ -24,7 +24,7 @@ const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClick
   };
 
   const costEntries = Object.entries(card.cost)
-    .filter(([_, count]) => (count || 0) > 0)
+    .filter(([, count]) => (count || 0) > 0)
     .sort((a, b) => (b[1] || 0) - (a[1] || 0));
 
   return (

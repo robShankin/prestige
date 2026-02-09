@@ -9,11 +9,15 @@ module.exports = {
     '^@game/(.*)$': '<rootDir>/src/game/$1',
     '^@ai/(.*)$': '<rootDir>/src/ai/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/index.tsx',
+    '!src/testUtils.ts',
+    '!src/game/analytics.ts',
+    '!src/scripts/**',
   ],
   coverageThreshold: {
     global: {

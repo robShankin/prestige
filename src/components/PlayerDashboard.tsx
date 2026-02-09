@@ -3,14 +3,14 @@
  */
 
 import React from 'react';
-import type { PlayerState, Card as CardType, Noble } from '../types';
+import type { PlayerState, Noble } from '../types';
 import Card from './Card';
 import './PlayerDashboard.css';
 
 interface PlayerDashboardProps {
   playerState: PlayerState;
   isCurrent: boolean;
-  reservedCards?: CardType[];
+  reservedCards?: any[];
   purchasedCardCount?: number;
   nobles?: Noble[];
 }

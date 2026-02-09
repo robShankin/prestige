@@ -1,19 +1,50 @@
 /**
- * AI player logic for CPU opponents
+ * AI player logic for CPU opponents.
+ *
+ * Implements three difficulty levels with increasing strategic depth:
+ * - easy: Random moves with purchase bias (learning)
+ * - medium: Balanced strategy with mixed randomness (competitive)
+ * - hard: Multi-turn planning and opponent blocking (challenge)
  */
 
 import type { GameState, PlayerState, GameAction, Card, Noble, GemCost, Color } from '../types';
 import { GameRules } from '../game/rules';
 
+/**
+ * AIPlayer - Implements CPU opponent decision-making.
+ *
+ * Generates valid GameActions based on game state and difficulty level.
+ * All decisions are deterministic (given same state) for testability.
+ */
 export class AIPlayer {
   private difficulty: 'easy' | 'medium' | 'hard';
   private playerId: string;
 
+  /**
+   * Create a new AI player.
+   *
+   * @param playerId - Unique identifier for this player
+   * @param difficulty - Strategy difficulty (easy|medium|hard), defaults to 'medium'
+   */
   constructor(playerId: string, difficulty: 'easy' | 'medium' | 'hard' = 'medium') {
     this.playerId = playerId;
     this.difficulty = difficulty;
   }
 
+  /**
+   * Decide the next action for this AI player.
+   *
+   * Routes to difficulty-specific strategy method and always returns a valid action.
+   * Called by TurnController.executeAITurn() during AI's turn.
+   *
+   * @param gameState - Current game state
+   * @param playerState - This player's state
+   * @returns A valid GameAction for the current game state
+   *
+   * @example
+   * const action = aiPlayer.decideAction(gameState, playerState);
+   * // Returns one of: TAKE_GEMS, RESERVE_CARD, PURCHASE_CARD, or END_TURN
+   */
   decideAction(gameState: GameState, playerState: PlayerState): GameAction {
     const currentPlayerIndex = gameState.players.findIndex(p => p.id === this.playerId);
 
@@ -28,7 +59,17 @@ export class AIPlayer {
   }
 
   /**
-   * Easy strategy: Mostly random valid actions with slight bias toward purchasing
+   * Easy strategy: Mostly random valid actions with slight bias toward purchasing.
+   *
+   * Learning difficulty. Makes random moves but slightly favors purchasing cards
+   * when possible. Good for new players or testing.
+   *
+   * @param gameState - Current game state
+   * @param playerState - This player's state
+   * @param playerIndex - This player's index
+   * @returns Random or slightly-biased valid GameAction
+   *
+   * @internal
    */
   private easyStrategy(gameState: GameState, playerState: PlayerState, playerIndex: number): GameAction {
     const affordableCards = this.getAffordableCards(gameState, playerState);
@@ -65,7 +106,24 @@ export class AIPlayer {
   }
 
   /**
-   * Medium strategy: Balanced approach with gem collection and strategic card purchase
+   * Medium strategy: Balanced approach with gem collection and strategic card purchase.
+   *
+   * Competitive difficulty. Prioritizes nobles, evaluates cards strategically, and
+   * maintains 40% randomness for unpredictability. Good default AI difficulty.
+   *
+   * Priority order:
+   * 1. Purchase cards leading to nobles
+   * 2. Purchase high-value affordable cards
+   * 3. Collect gems for next purchase
+   * 4. Reserve high-value cards
+   * 5. End turn
+   *
+   * @param gameState - Current game state
+   * @param playerState - This player's state
+   * @param playerIndex - This player's index
+   * @returns Strategically chosen GameAction with randomness element
+   *
+   * @internal
    */
   private mediumStrategy(gameState: GameState, playerState: PlayerState, playerIndex: number): GameAction {
     const affordableCards = this.getAffordableCards(gameState, playerState);
@@ -159,7 +217,26 @@ export class AIPlayer {
   }
 
   /**
-   * Hard strategy: Multi-turn planning with aggressive noble pursuit
+   * Hard strategy: Multi-turn planning with aggressive noble pursuit.
+   *
+   * Challenge difficulty. Deterministic (no randomness). Evaluates cards deeply,
+   * predicts opponent needs for blocking strategy, and plans 2-3 turns ahead.
+   * Uses multi-factor card evaluation (points, nobles, rarity, color diversity).
+   *
+   * Priority order:
+   * 1. Purchase cards completing noble requirements
+   * 2. Purchase highest-point affordable cards
+   * 3. Plan gem collection for expensive cards (lookahead)
+   * 4. Reserve opponent-blocking cards
+   * 5. Collect gems for gem-hungry cards
+   * 6. End turn
+   *
+   * @param gameState - Current game state
+   * @param playerState - This player's state
+   * @param playerIndex - This player's index
+   * @returns Strategically optimized GameAction based on lookahead
+   *
+   * @internal
    */
   private hardStrategy(gameState: GameState, playerState: PlayerState, playerIndex: number): GameAction {
     const affordableCards = this.getAffordableCards(gameState, playerState);
@@ -261,7 +338,20 @@ export class AIPlayer {
   }
 
   /**
-   * Evaluate a card's strategic value (0-100 scale)
+   * Evaluate a card's strategic value (0-100 scale).
+   *
+   * Scores based on:
+   * - Points: 15x multiplier (primary factor)
+   * - Noble bonus: +10 per noble reachable
+   * - Rarity/level: 5x for lower levels
+   * - Color diversity: +3 for new colors
+   *
+   * @param card - Card to evaluate
+   * @param playerState - Player's current state
+   * @param nobles - Available nobles in game
+   * @returns Score 0-100 (higher is better)
+   *
+   * @internal
    */
   private evaluateCard(card: Card, playerState: PlayerState, nobles: Noble[]): number {
     let score = 0;

@@ -2,7 +2,7 @@
  * Test utilities and factory functions for creating mock game objects
  */
 
-import type { GameState, PlayerState, Card, Noble, GemCost, Color } from '../types';
+import type { GameState, PlayerState, Card, Noble, GemCost, Color } from './types';
 
 /**
  * Create a mock Card with optional overrides

@@ -1,32 +1,64 @@
 /**
- * Turn flow orchestration and AI automation
+ * Turn flow orchestration and AI automation.
+ *
+ * Manages turn execution, action validation, AI chaining, noble awarding,
+ * and game phase transitions. Bridges game engine and AI players.
  */
 
-import type { GameState, GameAction, PlayerState, Card, Noble } from '../types';
+import type { GameState, GameAction, PlayerState } from '../types';
 import { GameRules } from './rules';
 import { AIPlayer } from '../ai/aiPlayer';
 
 /**
- * Game reducer type - will be imported from engine.ts (Agent 2)
- * For now, we define the contract here and will use it once engine.ts is available
+ * Type signature for game reducer function.
+ * Defines contract between TurnController and game engine.
  */
 export type GameReducer = (state: GameState, action: GameAction) => GameState;
 
+/**
+ * TurnController - Orchestrates game flow and turn execution.
+ *
+ * Responsibilities:
+ * - Validate actions before execution
+ * - Apply actions via gameReducer
+ * - Auto-award eligible nobles after each turn
+ * - Chain AI turns with delays (500ms for UX)
+ * - Detect end game condition and manage final round
+ * - Track game phases (setup → active → endGame → finished)
+ */
 export class TurnController {
   private gameReducer: GameReducer;
   private aiPlayers: Map<number, AIPlayer> = new Map();
 
+  /**
+   * Create a new TurnController.
+   *
+   * @param gameReducer - Pure reducer function from engine.ts
+   * @param aiPlayers - Map of player index to AIPlayer instances
+   */
   constructor(gameReducer: GameReducer, aiPlayers: Map<number, AIPlayer>) {
     this.gameReducer = gameReducer;
     this.aiPlayers = aiPlayers;
   }
 
   /**
-   * Execute a player action and handle subsequent AI turns if needed
-   * @param state Current game state
-   * @param action Action to execute
-   * @returns Final game state after all turns (human + chained AI turns) complete
-   * @throws Error if action is invalid
+   * Execute a player action and handle subsequent AI turns if needed.
+   *
+   * Main entry point for turn execution. Validates the action, applies it,
+   * awards nobles, checks end game, and auto-executes AI turns if the
+   * next player is controlled by AI.
+   *
+   * @param state - Current game state
+   * @param action - Action to execute (must be current player's turn)
+   * @returns Final game state after all turns complete (human + chained AI)
+   * @throws Error if playerIndex doesn't match currentPlayerIndex or action is invalid
+   *
+   * @example
+   * const newState = await turnController.executeTurn(gameState, {
+   *   type: 'PURCHASE_CARD',
+   *   playerIndex: 0,
+   *   card: selectedCard
+   * });
    */
   async executeTurn(state: GameState, action: GameAction): Promise<GameState> {
     const playerIndex = action.playerIndex;
@@ -63,9 +95,17 @@ export class TurnController {
   }
 
   /**
-   * Execute AI turns with automatic chaining
-   * @param state Current game state
-   * @returns Final game state after all AI turns complete
+   * Execute AI turns with automatic chaining.
+   *
+   * Loops executing AI turns until a human player is next or game finishes.
+   * Each AI decision includes a 500ms delay for UX (showing "thinking").
+   *
+   * Used internally by executeTurn after a player action.
+   *
+   * @param state - Current game state (next player must be AI)
+   * @returns Final game state after all chained AI turns complete
+   *
+   * @internal
    */
   async executeAITurn(state: GameState): Promise<GameState> {
     let currentState = state;
@@ -115,9 +155,16 @@ export class TurnController {
   }
 
   /**
-   * Check for game end conditions and handle end game phase
-   * @param state Current game state
-   * @returns Updated game state with gamePhase and winner set if game ended
+   * Check for game end conditions and handle end game phase.
+   *
+   * Manages state transitions:
+   * - active → endGame when any player reaches WINNING_POINTS
+   * - endGame → finished after final round completes
+   *
+   * During endGame phase, each remaining player gets exactly one final turn.
+   *
+   * @param state - Current game state
+   * @returns Updated game state with gamePhase and winner set if needed
    */
   checkEndGame(state: GameState): GameState {
     // Check if any player has reached winning points
@@ -180,10 +227,14 @@ export class TurnController {
   }
 
   /**
-   * Get all valid actions for a player
-   * @param state Current game state
-   * @param playerIndex Index of the player
-   * @returns Array of valid GameActions
+   * Get all valid actions for a player.
+   *
+   * Computes complete set of legal moves the player can make.
+   * Includes gem takes, card reservations, card purchases, noble claims, and end turn.
+   *
+   * @param state - Current game state
+   * @param playerIndex - Index of the player
+   * @returns Array of all valid GameActions player can perform
    */
   getValidActions(state: GameState, playerIndex: number): GameAction[] {
     const player = state.players[playerIndex];

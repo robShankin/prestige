@@ -4,7 +4,6 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import type { GemCost, Color } from '../types';
-import { GameRules } from '../game/rules';
 import './GemPool.css';
 
 interface GemPoolProps {
