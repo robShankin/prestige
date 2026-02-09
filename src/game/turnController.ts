@@ -111,6 +111,7 @@ export class TurnController {
 
     // Keep executing AI turns while the current player is AI and game is active
     while (
+      currentState.gamePhase === 'setup' ||
       currentState.gamePhase === 'active' ||
       currentState.gamePhase === 'endGame'
     ) {
@@ -156,6 +157,11 @@ export class TurnController {
       } catch (error) {
         // If AI errors, fall back to END_TURN
         console.warn('AI decision failed:', error);
+        aiAction = { type: 'END_TURN', playerIndex: currentState.currentPlayerIndex };
+      }
+
+      const validActions = this.getValidActions(currentState, currentState.currentPlayerIndex);
+      if (!this.isActionValid(currentState, aiAction, validActions)) {
         aiAction = { type: 'END_TURN', playerIndex: currentState.currentPlayerIndex };
       }
 

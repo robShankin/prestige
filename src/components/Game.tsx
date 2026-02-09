@@ -18,6 +18,7 @@ import { GameSetup } from './GameSetup';
 import GameBoard from './GameBoard';
 import GameOver from './GameOver';
 import './Game.css';
+import { getRandomAiNames } from '../game/data/aiNames';
 
 /**
  * Props for the Game component.
@@ -25,7 +26,7 @@ import './Game.css';
  * @property numberOfOpponents - Number of AI opponents (1-3)
  */
 interface GameProps {
-  numberOfOpponents: 1 | 2 | 3;
+  numberOfOpponents?: 1 | 2 | 3;
 }
 
 /**
@@ -63,7 +64,7 @@ function gameStateReducer(state: GameState | null, action: GameAction | { type: 
  * @example
  * <Game numberOfOpponents={2} />  // Game with 1 human + 2 AI
  */
-export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents }) => {
+export const Game: React.FC<GameProps> = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedOpponents, setSelectedOpponents] = useState<1 | 2 | 3 | null>(null);
   const [gameState, dispatch] = useReducer(gameStateReducer, null as GameState | null);
@@ -73,21 +74,33 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
   const [turnStartState, setTurnStartState] = useState<GameState | null>(null);
   const [hasPendingAction, setHasPendingAction] = useState(false);
 
-  const handleStartGame = (opponents: 1 | 2 | 3) => {
+  const handleStartGame = (opponents: 1 | 2 | 3, difficulties: Array<'easy' | 'medium' | 'hard'>) => {
     setSelectedOpponents(opponents);
     setIsLoading(true);
     setError(null);
 
     const totalPlayers = opponents + 1;
     const newGameState = initializeGame(totalPlayers);
-    dispatch({ type: 'INIT_GAME', gameState: newGameState });
-    setTurnStartState(newGameState);
+    const aiNames = getRandomAiNames(opponents);
+
+    const updatedPlayers = newGameState.players.map((player, idx) => {
+      if (idx === 0) return player;
+      const difficulty = difficulties[idx - 1] || 'medium';
+      return {
+        ...player,
+        name: aiNames[idx - 1] || `AI-${idx}`,
+        aiDifficulty: difficulty,
+      };
+    });
+    const patchedGameState = { ...newGameState, players: updatedPlayers };
+    dispatch({ type: 'INIT_GAME', gameState: patchedGameState });
+    setTurnStartState(patchedGameState);
     setHasPendingAction(false);
 
     // Setup AI players
     const aiPlayers = new Map<number, AIPlayer>();
     for (let i = 1; i < totalPlayers; i++) {
-      const difficulty = i === 1 ? 'hard' : i === 2 ? 'medium' : 'easy';
+      const difficulty = difficulties[i - 1] || 'medium';
       aiPlayers.set(i, new AIPlayer(`ai-${i}`, difficulty));
     }
 
@@ -127,6 +140,11 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
       action.type !== 'DISCARD_GEMS'
     ) {
       setError('You must discard down to 10 tokens before ending your turn.');
+      return;
+    }
+
+    if (action.type === 'END_TURN' && !hasPendingAction) {
+      setError('You must take an action before ending your turn.');
       return;
     }
 

@@ -27,12 +27,13 @@ describe('Game Flow Integration', () => {
     const takeAction: GameAction = {
       type: 'TAKE_GEMS',
       playerIndex: 0,
-      gems: ['red', 'blue'],
+      gems: ['red', 'blue', 'green'],
     };
 
     let state = gameReducer(gameState, takeAction);
     expect(state.players[0].gems.red).toBe(1);
     expect(state.players[0].gems.blue).toBe(1);
+    expect(state.players[0].gems.green).toBe(1);
 
     // Second action: end turn
     const endTurnAction: GameAction = {

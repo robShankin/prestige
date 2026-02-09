@@ -35,6 +35,7 @@ export interface PlayerState {
   points: number;
   nobles: Noble[];
   isAI: boolean;
+  aiDifficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface GameState {

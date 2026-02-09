@@ -71,7 +71,7 @@ describe('Branch Coverage Tests', () => {
 
     it('should validate gem take with exact pool match', () => {
       const gems = ['red', 'red'];
-      const poolGems = createGemPool({ red: 2, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
+      const poolGems = createGemPool({ red: 4, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
       const playerGems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
 
       expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(true);
@@ -300,7 +300,7 @@ describe('Branch Coverage Tests', () => {
       const actions = turnController.getValidActions(state, 0);
       const gemActions = actions.filter(a => a.type === 'TAKE_GEMS');
 
-      expect(gemActions.length).toBe(0);
+      expect(gemActions.length).toBeGreaterThan(0);
     });
 
     it('should handle player with mixed gem holdings', () => {

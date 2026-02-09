@@ -29,6 +29,12 @@
   color: #fff;
 }
 
+.ai-difficulty {
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 0.9rem;
+}
+
 .ai-badge {
   background: #ff9500;
   color: #000;
@@ -167,6 +173,23 @@
   padding: 4px;
   position: relative;
   opacity: 0.8;
+}
+
+.reserved-card-preview {
+  position: absolute;
+  top: -10px;
+  left: 60px;
+  width: 140px;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.reserved-card-mini:hover .reserved-card-preview {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .card-mini-points {

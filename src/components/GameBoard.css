@@ -104,8 +104,8 @@
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 /* Actions Section */
@@ -221,7 +221,7 @@
   }
 
   .card-grid {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .players-grid {
@@ -240,7 +240,7 @@
   }
 
   .card-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .players-grid {

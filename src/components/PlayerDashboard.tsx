@@ -53,7 +53,11 @@ const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
     <div className={`player-dashboard ${isCurrent ? 'current-player' : ''}`}>
       <div className="player-header">
         <h3>{playerState.name}</h3>
-        {playerState.isAI && <span className="ai-badge">AI</span>}
+        {playerState.isAI && (
+          <span className="ai-badge">
+            AI{playerState.aiDifficulty ? ` - ${playerState.aiDifficulty[0].toUpperCase()}${playerState.aiDifficulty.slice(1)}` : ''}
+          </span>
+        )}
       </div>
 
       {/* Points */}
@@ -88,6 +92,9 @@ const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
               <div key={card.id} className="reserved-card-mini">
                 <div className="card-mini-points">{card.points}</div>
                 <div className={`card-mini-color`}></div>
+                <div className="reserved-card-preview">
+                  <Card card={card} onClick={() => {}} state="reserved" />
+                </div>
               </div>
             ))}
           </div>

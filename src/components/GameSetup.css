@@ -57,6 +57,52 @@
   margin-bottom: 20px;
 }
 
+.difficulty-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.difficulty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.difficulty-label {
+  font-weight: 600;
+  color: #ffffff;
+  min-width: 48px;
+}
+
+.difficulty-select {
+  flex: 1;
+  background: #1a1a2e;
+  color: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.5);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+
+.randomize-btn {
+  background: rgba(255, 193, 7, 0.15);
+  border: 1px solid rgba(255, 193, 7, 0.6);
+  color: #ffc107;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.randomize-btn:hover {
+  background: rgba(255, 193, 7, 0.25);
+}
+
 .opponent-btn {
   background: linear-gradient(135deg, #3d3d4d 0%, #4d4d5d 100%);
   border: 2px solid #505070;
