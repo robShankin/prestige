@@ -53,6 +53,7 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
   const handleGemClick = useCallback(
     (color: string) => {
       if (disabled) return;
+      if (color === 'gold') return;
 
       const count = gemPool[color as Color] || 0;
       if (count === 0) return;
@@ -60,15 +61,26 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
       const newSelected = [...selectedGems];
       const sameColorCount = newSelected.filter(g => g === color).length;
 
-      // Allow adding this color if:
-      // - We have less than 3 total gems selected AND
-      // - We have less than 2 of this color OR all selected gems are this color
-      if (newSelected.length < 3) {
-        const otherColors = newSelected.filter(g => g !== color).length;
-        if (sameColorCount < 2 && (otherColors === 0 || sameColorCount > 0)) {
-          newSelected.push(color);
-        }
+      if (newSelected.length >= 3) return;
+
+      // Allow building toward a valid selection:
+      // - Up to 3 total gems
+      // - No more than 2 of the same color
+      if (sameColorCount >= 2) return;
+
+      if (sameColorCount === 1 && (gemPool[color as Color] || 0) < 4) {
+        return;
       }
+
+      if (newSelected.length === 2) {
+        const uniqueColors = new Set(newSelected).size;
+        // If already two different colors, only allow a third different color.
+        if (uniqueColors === 2 && newSelected.includes(color)) return;
+        // If already two of the same, no third gem allowed.
+        if (uniqueColors === 1) return;
+      }
+
+      newSelected.push(color);
 
       setSelectedGems(newSelected);
     },
@@ -94,17 +106,22 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
           const count = gemPool[color] || 0;
           const isSelected = selectedGems.includes(color);
           const isAvailable = count > 0;
+          const isSelectable = color !== 'gold';
 
           return (
             <button
               key={color}
               className={`gem-token ${colorClasses[color] || ''} ${isSelected ? 'selected' : ''} ${
-                !isAvailable || disabled ? 'disabled' : ''
+                !isAvailable || disabled || !isSelectable ? 'disabled' : ''
               }`}
               onClick={() => handleGemClick(color)}
-              disabled={!isAvailable || disabled}
+              disabled={!isAvailable || disabled || !isSelectable}
               aria-label={`${color} gem (${count} available)`}
-              title={`${color.charAt(0).toUpperCase() + color.slice(1)} - Click to select`}
+              title={
+                color === 'gold'
+                  ? 'Gold is gained by reserving cards'
+                  : `${color.charAt(0).toUpperCase() + color.slice(1)} - Click to select`
+              }
             >
               <div className="gem-label">{color.charAt(0).toUpperCase()}</div>
               <div className="gem-count">{count}</div>
@@ -148,7 +165,7 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
       {/* Validation Messages */}
       {selectedGems.length > 0 && !isValidSelection && (
         <div className="validation-message">
-          Select either 2 of the same color or 3 different colors
+          Select 2 of the same color (requires 4+ available) or 3 different colors
         </div>
       )}
     </div>

@@ -117,6 +117,77 @@
   border-top: 2px solid rgba(102, 126, 234, 0.3);
 }
 
+.discard-panel {
+  grid-column: 1 / -1;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px dashed rgba(255, 193, 7, 0.6);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.discard-panel h3 {
+  margin: 0 0 8px 0;
+  color: #ffc107;
+}
+
+.discard-panel p {
+  margin: 0 0 12px 0;
+  color: #ddd;
+}
+
+.discard-tokens {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.discard-token {
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: capitalize;
+  color: #fff;
+  background: var(--gem-color, rgba(0, 0, 0, 0.2));
+}
+
+.discard-token:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.discard-selection {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.discard-chip {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: 600;
+  text-transform: capitalize;
+  cursor: pointer;
+  color: #000;
+  background: var(--gem-color, #eee);
+}
+
+.discard-token.gem-white,
+.discard-chip.gem-white,
+.discard-token.gem-gold,
+.discard-chip.gem-gold {
+  color: #000;
+}
+
+.discard-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .gem-pool-wrapper {
   background: rgba(0, 0, 0, 0.2);
   padding: 20px;

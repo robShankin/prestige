@@ -5,7 +5,7 @@
  * and game phase transitions. Bridges game engine and AI players.
  */
 
-import type { GameState, GameAction, PlayerState } from '../types';
+import type { GameState, GameAction, PlayerState, Color } from '../types';
 import { GameRules } from './rules';
 import { AIPlayer } from '../ai/aiPlayer';
 
@@ -71,24 +71,23 @@ export class TurnController {
     }
 
     const validActions = this.getValidActions(state, playerIndex);
-    const isValidAction = this.isActionValid(action, validActions);
+    const isValidAction = this.isActionValid(state, action, validActions);
 
     if (!isValidAction) {
       throw new Error(`Invalid action: ${action.type} for player ${playerIndex}`);
     }
 
-    // Apply the action
+    // Apply the action (human turn: explicit END_TURN required)
     let newState = this.gameReducer(state, action);
 
-    // Check for noble awards
-    newState = this.awardNobles(newState, playerIndex);
+    if (action.type === 'END_TURN') {
+      // Check end game condition
+      newState = this.checkEndGame(newState);
 
-    // Check end game condition
-    newState = this.checkEndGame(newState);
-
-    // If next player is AI, recursively execute AI turns
-    if (newState.gamePhase !== 'finished') {
-      newState = await this.executeAITurn(newState);
+      // If next player is AI, recursively execute AI turns
+      if (newState.gamePhase !== 'finished') {
+        newState = await this.executeAITurn(newState);
+      }
     }
 
     return newState;
@@ -122,6 +121,23 @@ export class TurnController {
         break;
       }
 
+      // If AI must discard, do it immediately
+      if (
+        currentState.pendingDiscard &&
+        currentState.pendingDiscard.playerIndex === currentState.currentPlayerIndex
+      ) {
+        const discardAction = this.buildAIDiscardAction(
+          currentState,
+          currentState.currentPlayerIndex
+        );
+        currentState = this.applyActionAndEndTurn(currentState, discardAction);
+        currentState = this.checkEndGame(currentState);
+        if (currentState.gamePhase === 'finished') {
+          break;
+        }
+        continue;
+      }
+
       // Get AI player instance
       const aiPlayer = this.aiPlayers.get(currentState.currentPlayerIndex);
       if (!aiPlayer) {
@@ -143,11 +159,8 @@ export class TurnController {
         aiAction = { type: 'END_TURN', playerIndex: currentState.currentPlayerIndex };
       }
 
-      // Apply action via gameReducer
-      currentState = this.gameReducer(currentState, aiAction);
-
-      // Check for noble awards
-      currentState = this.awardNobles(currentState, currentState.currentPlayerIndex);
+      // Apply action via gameReducer (one action per turn)
+      currentState = this.applyActionAndEndTurn(currentState, aiAction);
 
       // Check end game condition
       currentState = this.checkEndGame(currentState);
@@ -247,6 +260,13 @@ export class TurnController {
     const player = state.players[playerIndex];
     const validActions: GameAction[] = [];
 
+    if (state.pendingDiscard) {
+      if (state.pendingDiscard.playerIndex !== playerIndex) {
+        return [];
+      }
+      return [{ type: 'DISCARD_GEMS', playerIndex, gems: [] }];
+    }
+
     // Always include END_TURN
     validActions.push({ type: 'END_TURN', playerIndex });
 
@@ -276,25 +296,14 @@ export class TurnController {
     const actions: GameAction[] = [];
     const colors: (keyof Omit<typeof state.gemPool, 'gold'>)[] = ['red', 'blue', 'green', 'white', 'black'];
 
-    // Generate all possible combinations of gem takes (1-3 gems)
+    // Generate all possible combinations of gem takes (2 same or 3 different)
     const availableGems = colors.filter(color => (state.gemPool[color] || 0) > 0);
 
-    // Single gem takes
+    // Two gem takes (same color) - only if 4+ in supply
     for (const gem of availableGems) {
-      if (GameRules.canTakeGems(player.gems, [gem])) {
-        actions.push({
-          type: 'TAKE_GEMS',
-          playerIndex,
-          gems: [gem],
-        });
-      }
-    }
-
-    // Two gem takes (different colors)
-    for (let i = 0; i < availableGems.length; i++) {
-      for (let j = i + 1; j < availableGems.length; j++) {
-        const gems = [availableGems[i], availableGems[j]];
-        if (GameRules.canTakeGems(player.gems, gems)) {
+      if ((state.gemPool[gem] || 0) >= 4) {
+        const gems = [gem, gem];
+        if (GameRules.validateGemTake(gems, state.gemPool, player.gems)) {
           actions.push({
             type: 'TAKE_GEMS',
             playerIndex,
@@ -309,7 +318,7 @@ export class TurnController {
       for (let j = i + 1; j < availableGems.length; j++) {
         for (let k = j + 1; k < availableGems.length; k++) {
           const gems = [availableGems[i], availableGems[j], availableGems[k]];
-          if (GameRules.canTakeGems(player.gems, gems)) {
+          if (GameRules.validateGemTake(gems, state.gemPool, player.gems)) {
             actions.push({
               type: 'TAKE_GEMS',
               playerIndex,
@@ -459,6 +468,36 @@ export class TurnController {
   }
 
   /**
+   * Apply a single action, then end the turn for that player.
+   * Ensures "one action per turn" rule.
+   */
+  private applyActionAndEndTurn(state: GameState, action: GameAction): GameState {
+    let newState = this.gameReducer(state, action);
+
+    if (action.type === 'DISCARD_GEMS') {
+      if (!newState.pendingDiscard) {
+        newState = this.gameReducer(newState, { type: 'END_TURN', playerIndex: action.playerIndex });
+      }
+      return newState;
+    }
+
+    if (action.type !== 'END_TURN') {
+      const player = newState.players[action.playerIndex];
+      const excess = GameRules.countGems(player.gems) - GameRules.MAX_GEMS_PER_PLAYER;
+      if (excess > 0) {
+        return {
+          ...newState,
+          pendingDiscard: { playerIndex: action.playerIndex, count: excess },
+        };
+      }
+
+      newState = this.gameReducer(newState, { type: 'END_TURN', playerIndex: action.playerIndex });
+    }
+
+    return newState;
+  }
+
+  /**
    * Advance to the next player's turn
    */
   private advanceToNextPlayer(state: GameState): GameState {
@@ -472,7 +511,7 @@ export class TurnController {
   /**
    * Check if an action matches any valid action
    */
-  private isActionValid(action: GameAction, validActions: GameAction[]): boolean {
+  private isActionValidAgainstList(action: GameAction, validActions: GameAction[]): boolean {
     return validActions.some(validAction => {
       if (validAction.type !== action.type) return false;
 
@@ -489,6 +528,11 @@ export class TurnController {
             JSON.stringify(vAction.gems.sort()) ===
             JSON.stringify(action.gems.sort())
           );
+        }
+
+        case 'DISCARD_GEMS': {
+          const vAction = validAction as typeof action;
+          return vAction.playerIndex === action.playerIndex;
         }
 
         case 'RESERVE_CARD': {
@@ -519,6 +563,54 @@ export class TurnController {
           return false;
       }
     });
+  }
+
+  private isActionValid(state: GameState, action: GameAction, validActions: GameAction[]): boolean {
+    if (state.pendingDiscard && action.type !== 'DISCARD_GEMS') {
+      return false;
+    }
+
+    if (action.type === 'DISCARD_GEMS') {
+      if (!state.pendingDiscard || state.pendingDiscard.playerIndex !== action.playerIndex) {
+        return false;
+      }
+      if (action.gems.length !== state.pendingDiscard.count) {
+        return false;
+      }
+    }
+
+    return this.isActionValidAgainstList(action, validActions);
+  }
+
+  private buildAIDiscardAction(state: GameState, playerIndex: number): GameAction {
+    const player = state.players[playerIndex];
+    const discardCount = state.pendingDiscard?.count || 0;
+    const colors: Color[] = ['red', 'blue', 'green', 'white', 'black', 'gold'];
+
+    const counts = colors.map(color => ({
+      color,
+      count: player.gems[color] || 0,
+    }));
+
+    counts.sort((a, b) => {
+      if (a.color === 'gold') return 1;
+      if (b.color === 'gold') return -1;
+      return b.count - a.count;
+    });
+
+    const gemsToDiscard: string[] = [];
+    let remaining = discardCount;
+
+    for (const entry of counts) {
+      if (remaining === 0) break;
+      const take = Math.min(entry.count, remaining);
+      for (let i = 0; i < take; i++) {
+        gemsToDiscard.push(entry.color);
+      }
+      remaining -= take;
+    }
+
+    return { type: 'DISCARD_GEMS', playerIndex, gems: gemsToDiscard };
   }
 
   /**

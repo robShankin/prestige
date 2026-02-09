@@ -9,7 +9,7 @@
  * - Render logic (loading → game board → game over)
  */
 
-import React, { useState, useReducer } from 'react';
+import React, { useState, useReducer, useEffect } from 'react';
 import type { GameState, GameAction } from '../types';
 import { initializeGame, gameReducer } from '../game/engine';
 import { TurnController } from '../game/turnController';
@@ -70,6 +70,8 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
   const [isLoading, setIsLoading] = useState(false);
   const [turnController, setTurnController] = useState<TurnController | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [turnStartState, setTurnStartState] = useState<GameState | null>(null);
+  const [hasPendingAction, setHasPendingAction] = useState(false);
 
   const handleStartGame = (opponents: 1 | 2 | 3) => {
     setSelectedOpponents(opponents);
@@ -79,6 +81,8 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
     const totalPlayers = opponents + 1;
     const newGameState = initializeGame(totalPlayers);
     dispatch({ type: 'INIT_GAME', gameState: newGameState });
+    setTurnStartState(newGameState);
+    setHasPendingAction(false);
 
     // Setup AI players
     const aiPlayers = new Map<number, AIPlayer>();
@@ -93,13 +97,43 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
 
   const handleRestart = () => {
     setSelectedOpponents(null);
-    dispatch({ type: 'INIT_GAME', gameState: initializeGame(1) } as any);
+    // Return to setup screen; game state will be re-initialized on start.
     setTurnController(null);
+    setError(null);
+    setIsLoading(false);
+    setTurnStartState(null);
+    setHasPendingAction(false);
+  };
+
+  useEffect(() => {
+    if (!gameState) return;
+    setTurnStartState(gameState);
+    setHasPendingAction(false);
+  }, [gameState?.currentPlayerIndex]);
+
+  const handleUndo = () => {
+    if (!turnStartState) return;
+    dispatch({ type: 'SET_STATE', gameState: turnStartState } as any);
+    setHasPendingAction(false);
     setError(null);
   };
 
   const handleAction = async (action: GameAction) => {
     if (!gameState || !turnController || isLoading) return;
+
+    if (
+      gameState.pendingDiscard &&
+      gameState.pendingDiscard.playerIndex === gameState.currentPlayerIndex &&
+      action.type !== 'DISCARD_GEMS'
+    ) {
+      setError('You must discard down to 10 tokens before ending your turn.');
+      return;
+    }
+
+    if (action.type !== 'END_TURN' && action.type !== 'DISCARD_GEMS' && hasPendingAction) {
+      setError('You already took an action. Undo or end your turn.');
+      return;
+    }
 
     try {
       setError(null);
@@ -108,6 +142,11 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
       // Execute the action through the turn controller
       const newState = await turnController.executeTurn(gameState, action);
       dispatch({ type: 'SET_STATE', gameState: newState } as any);
+      if (action.type === 'END_TURN') {
+        setHasPendingAction(false);
+      } else {
+        setHasPendingAction(true);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
@@ -172,6 +211,8 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents: _defaultOpponents
         onAction={handleAction}
         isLoading={isLoading}
         isCurrentPlayerAI={isCurrentPlayerAI}
+        hasPendingAction={hasPendingAction}
+        onUndo={handleUndo}
       />
 
       {isLoading && (

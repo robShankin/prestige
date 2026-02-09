@@ -292,7 +292,7 @@ export class AIPlayer {
 
     if (affordableWithGoldLimit.length > 0) {
       const gemsNeeded = this.findBestGemCollection(affordableWithGoldLimit, playerState.gems);
-      if (gemsNeeded.length > 0 && GameRules.canTakeGems(playerState.gems, gemsNeeded)) {
+      if (gemsNeeded.length > 0 && GameRules.validateGemTake(gemsNeeded, gameState.gemPool, playerState.gems)) {
         return { type: 'TAKE_GEMS', playerIndex, gems: gemsNeeded };
       }
     }
@@ -518,11 +518,11 @@ export class AIPlayer {
     const validMoves: string[][] = [];
     const colors: Color[] = ['red', 'blue', 'green', 'white', 'black'];
 
-    // Try 2-of-same
+    // Try 2-of-same (only if 4+ in supply)
     colors.forEach(color => {
       const gemsToTake = [color, color];
       const poolCount = (gameState.gemPool[color as keyof GemCost] || 0) as number;
-      if (GameRules.canTakeGems(playerState.gems, gemsToTake) && poolCount >= 2) {
+      if (GameRules.validateGemTake(gemsToTake, gameState.gemPool, playerState.gems) && poolCount >= 4) {
         validMoves.push(gemsToTake);
       }
     });
@@ -530,14 +530,8 @@ export class AIPlayer {
     // Try 3-different
     const combinations = this.generateColorCombinations(colors, 3);
     combinations.forEach(combo => {
-      if (GameRules.canTakeGems(playerState.gems, combo)) {
-        const canTake = combo.every(color => {
-          const poolCount = (gameState.gemPool[color as keyof GemCost] || 0) as number;
-          return poolCount >= 1;
-        });
-        if (canTake) {
-          validMoves.push(combo);
-        }
+      if (GameRules.validateGemTake(combo, gameState.gemPool, playerState.gems)) {
+        validMoves.push(combo);
       }
     });
 

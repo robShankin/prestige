@@ -54,10 +54,15 @@ export interface GameState {
   gemPool: GemCost & { gold: number };
   gamePhase: 'setup' | 'active' | 'endGame' | 'finished';
   winner?: PlayerState;
+  pendingDiscard?: {
+    playerIndex: number;
+    count: number;
+  };
 }
 
 export type GameAction =
   | { type: 'TAKE_GEMS'; playerIndex: number; gems: string[] }
+  | { type: 'DISCARD_GEMS'; playerIndex: number; gems: string[] }
   | { type: 'RESERVE_CARD'; playerIndex: number; card: Card }
   | { type: 'PURCHASE_CARD'; playerIndex: number; card: Card }
   | { type: 'END_TURN'; playerIndex: number }

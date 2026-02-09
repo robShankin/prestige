@@ -280,7 +280,11 @@ describe('Game Flow Integration', () => {
     const colors = ['red', 'blue', 'green', 'white', 'black'];
 
     for (const color of colors) {
-      const canTake = GameRules.canTakeGems(gameState.players[0].gems, [color]);
+      const canTake = GameRules.validateGemTake(
+        [color, color],
+        gameState.gemPool,
+        gameState.players[0].gems
+      );
       expect(typeof canTake).toBe('boolean');
     }
   });

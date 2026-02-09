@@ -28,20 +28,31 @@ export class GameRules {
    * Check if a player can take the specified gems without exceeding limits.
    *
    * Validates:
-   * - Takes 1-3 gems
-   * - Player won't exceed MAX_GEMS_PER_PLAYER after taking
+   * - Takes exactly 3 different gems OR 2 of the same (Splendor rule)
+   * - Does not include gold (gold is only gained by reserving)
    *
    * @param playerGems - Player's current gem collection
    * @param gemsToTake - Array of gem colors/amounts to take
    * @returns True if take is legal, false otherwise
    */
   static canTakeGems(playerGems: GemCost & { gold: number }, gemsToTake: string[]): boolean {
-    if (gemsToTake.length > 3) return false;
+    if (gemsToTake.length === 0 || gemsToTake.length > 3) return false;
 
-    const current = this.countGems(playerGems);
-    const newTotal = current + gemsToTake.length;
+    // Gold cannot be taken from the pool directly.
+    if (gemsToTake.some(gem => gem === 'gold')) {
+      return false;
+    }
 
-    return newTotal <= this.MAX_GEMS_PER_PLAYER;
+    const uniqueColors = new Set(gemsToTake).size;
+
+    const isTwoSame = gemsToTake.length === 2 && uniqueColors === 1;
+    const isThreeDifferent = gemsToTake.length === 3 && uniqueColors === 3;
+
+    if (!isTwoSame && !isThreeDifferent) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -192,9 +203,9 @@ export class GameRules {
    * Validate a gem take action.
    *
    * Complete validation ensuring:
-   * - Gems array is 1-3 gems
+   * - Gems array is 2 (same color) or 3 (different colors)
    * - Pool has enough gems of each color
-   * - Player has room to hold gems (won't exceed MAX_GEMS_PER_PLAYER)
+   * - 2-of-same requires 4+ in pool
    *
    * @param gems - Array of gem colors to take
    * @param poolGems - Available gems in pool
@@ -206,24 +217,34 @@ export class GameRules {
     poolGems: GemCost & { gold: number },
     playerGems: GemCost & { gold: number }
   ): boolean {
-    if (gems.length === 0 || gems.length > 3) {
+    if (!this.canTakeGems(playerGems, gems)) {
       return false;
     }
 
-    // Check pool has enough gems
-    const gemCounts: { [key: string]: number } = {};
-    for (const gem of gems) {
-      gemCounts[gem] = (gemCounts[gem] || 0) + 1;
-    }
+    const uniqueColors = new Set(gems).size;
+    const isTwoSame = gems.length === 2 && uniqueColors === 1;
 
-    for (const [gem, count] of Object.entries(gemCounts)) {
-      const available = poolGems[gem as Color] || 0;
-      if (available < count) {
+    // Check pool has enough gems, with official 4+ requirement for 2-of-same.
+    if (isTwoSame) {
+      const color = gems[0] as Color;
+      const available = poolGems[color] || 0;
+      if (available < 4) {
         return false;
+      }
+    } else {
+      const gemCounts: { [key: string]: number } = {};
+      for (const gem of gems) {
+        gemCounts[gem] = (gemCounts[gem] || 0) + 1;
+      }
+
+      for (const [gem, count] of Object.entries(gemCounts)) {
+        const available = poolGems[gem as Color] || 0;
+        if (available < count) {
+          return false;
+        }
       }
     }
 
-    // Check player can hold gems
-    return this.canTakeGems(playerGems, gems);
+    return true;
   }
 }

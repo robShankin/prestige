@@ -3,7 +3,7 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { GameState, GameAction } from '../types';
 import { TurnController } from '../game/turnController';
 import Card from './Card';
@@ -17,14 +17,24 @@ interface GameBoardProps {
   onAction: (action: GameAction) => Promise<void>;
   isLoading: boolean;
   isCurrentPlayerAI: boolean;
+  hasPendingAction: boolean;
+  onUndo: () => void;
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, isCurrentPlayerAI }) => {
+const GameBoard: React.FC<GameBoardProps> = ({
+  gameState,
+  onAction,
+  isLoading,
+  isCurrentPlayerAI,
+  hasPendingAction,
+  onUndo,
+}) => {
   const turnController = useMemo(() => new TurnController(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (_state, _action) => _state,
     new Map()
   ), []);
+  const [discardSelection, setDiscardSelection] = useState<string[]>([]);
 
   const validActions = useMemo(() => {
     if (isCurrentPlayerAI || isLoading) return [];
@@ -33,6 +43,18 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const isCurrentPlayer = !currentPlayer.isAI;
+  const pendingDiscard = gameState.pendingDiscard;
+  const isDiscarding = Boolean(
+    pendingDiscard &&
+      pendingDiscard.playerIndex === gameState.currentPlayerIndex &&
+      isCurrentPlayer
+  );
+  const disableActions = isLoading || isCurrentPlayerAI || isDiscarding;
+  const disableNonEndActions = disableActions || hasPendingAction;
+
+  useEffect(() => {
+    setDiscardSelection([]);
+  }, [pendingDiscard?.count, pendingDiscard?.playerIndex]);
 
   return (
     <div className="game-board">
@@ -78,15 +100,15 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
                       (a) => a.type === 'RESERVE_CARD' && 'card' in a && (a as any).card.id === (card as any).id
                     );
 
-                    if (purchaseAction) {
+                    if (purchaseAction && !disableNonEndActions) {
                       onAction(purchaseAction);
-                    } else if (reserveAction && !isLoading && isCurrentPlayer) {
+                    } else if (reserveAction && !disableNonEndActions && isCurrentPlayer) {
                       onAction(reserveAction);
                     }
                   }}
                   state="available"
                   isClickable={
-                    !isLoading &&
+                    !disableNonEndActions &&
                     isCurrentPlayer &&
                     validActions.some(
                       (a) =>
@@ -104,6 +126,76 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
 
       {/* Gem Pool and Actions */}
       <section className="actions-section">
+        {isDiscarding && pendingDiscard && (
+          <div className="discard-panel">
+            <h3>Discard Tokens</h3>
+            <p>You must discard {pendingDiscard.count} token(s) to end your turn.</p>
+            <div className="discard-tokens">
+              {(['red', 'blue', 'green', 'white', 'black', 'gold'] as const).map((color) => {
+                const available = currentPlayer.gems[color] || 0;
+                const selectedCount = discardSelection.filter(g => g === color).length;
+                const canAdd = selectedCount < available && discardSelection.length < pendingDiscard.count;
+
+                return (
+                  <button
+                    key={color}
+                    className={`discard-token gem-${color}`}
+                    onClick={() => {
+                      if (!canAdd) return;
+                      setDiscardSelection([...discardSelection, color]);
+                    }}
+                    disabled={!canAdd}
+                    title={`${color} (${available})`}
+                  >
+                    {color.charAt(0).toUpperCase()} {available}
+                  </button>
+                );
+              })}
+            </div>
+            {discardSelection.length > 0 && (
+              <div className="discard-selection">
+                {discardSelection.map((gem, idx) => (
+                  <button
+                    key={`${gem}-${idx}`}
+                    className={`discard-chip gem-${gem}`}
+                    onClick={() => {
+                      const next = [...discardSelection];
+                      next.splice(idx, 1);
+                      setDiscardSelection(next);
+                    }}
+                    title="Click to remove"
+                  >
+                    {gem}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="discard-actions">
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  if (!pendingDiscard) return;
+                  onAction({
+                    type: 'DISCARD_GEMS',
+                    playerIndex: gameState.currentPlayerIndex,
+                    gems: discardSelection,
+                  });
+                  setDiscardSelection([]);
+                }}
+                disabled={discardSelection.length !== pendingDiscard.count}
+              >
+                Discard
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDiscardSelection([])}
+                disabled={discardSelection.length === 0}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
         <div className="gem-pool-wrapper">
           <GemPool
             gemPool={gameState.gemPool}
@@ -117,14 +209,18 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
                 onAction(gemAction);
               }
             }}
-            disabled={isLoading || isCurrentPlayerAI}
+            disabled={disableNonEndActions}
           />
         </div>
 
         <ActionButtons
           validActions={validActions}
           onAction={onAction}
-          disabled={isLoading || isCurrentPlayerAI}
+          disabled={disableActions}
+          disableNonEndActions={disableNonEndActions}
+          disableEndTurn={isDiscarding || isCurrentPlayerAI || isLoading}
+          canUndo={hasPendingAction && isCurrentPlayer}
+          onUndo={onUndo}
           isAITurn={isCurrentPlayerAI}
         />
       </section>

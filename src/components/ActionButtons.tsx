@@ -12,9 +12,22 @@ interface ActionButtonsProps {
   onAction: (action: GameAction) => Promise<void>;
   disabled: boolean;
   isAITurn: boolean;
+  disableNonEndActions: boolean;
+  disableEndTurn: boolean;
+  canUndo: boolean;
+  onUndo: () => void;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, disabled, isAITurn }) => {
+const ActionButtons: React.FC<ActionButtonsProps> = ({
+  validActions,
+  onAction,
+  disabled,
+  isAITurn,
+  disableNonEndActions,
+  disableEndTurn,
+  canUndo,
+  onUndo,
+}) => {
   // Group actions by type
   const actionsByType = validActions.reduce(
     (acc, action) => {
@@ -58,7 +71,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, d
                     key={`purchase-${idx}`}
                     className="btn btn-purchase"
                     onClick={() => handleAction(action)}
-                    disabled={disabled}
+                    disabled={disabled || disableNonEndActions}
                   >
                     Buy {points > 0 ? points + ' pts' : 'Card'}
                   </button>
@@ -81,7 +94,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, d
                     key={`reserve-${idx}`}
                     className="btn btn-reserve"
                     onClick={() => handleAction(action)}
-                    disabled={disabled}
+                    disabled={disabled || disableNonEndActions}
                   >
                     Reserve {card?.level || '?'}
                   </button>
@@ -93,36 +106,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({ validActions, onAction, d
             </div>
           )}
 
-          {/* Claim Noble Actions */}
-          {actionsByType.CLAIM_NOBLE && actionsByType.CLAIM_NOBLE.length > 0 && (
-            <div className="action-group">
-              <div className="group-label">Claim Nobles</div>
-              {actionsByType.CLAIM_NOBLE.map((action, idx) => {
-                const noble = 'noble' in action ? ((action as unknown) as any).noble : null;
-                return (
-                  <button
-                    key={`noble-${idx}`}
-                    className="btn btn-noble"
-                    onClick={() => handleAction(action)}
-                    disabled={disabled}
-                  >
-                    Claim {noble?.points || '?'} pts
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           {/* End Turn Action */}
           {actionsByType.END_TURN && (
             <div className="action-group">
               <button
                 className="btn btn-primary btn-large"
                 onClick={() => handleAction(actionsByType.END_TURN[0])}
-                disabled={disabled}
+                disabled={disabled || disableEndTurn}
               >
                 End Turn
               </button>
+              {canUndo && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={onUndo}
+                  disabled={disabled}
+                >
+                  Undo
+                </button>
+              )}
             </div>
           )}
         </div>

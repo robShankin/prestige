@@ -141,6 +141,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'TAKE_GEMS':
       return handleTakeGems(state, action);
+    case 'DISCARD_GEMS':
+      return handleDiscardGems(state, action);
     case 'RESERVE_CARD':
       return handleReserveCard(state, action);
     case 'PURCHASE_CARD':
@@ -178,7 +180,7 @@ function handleTakeGems(
   }
 
   // Validate the gems can be taken
-  if (!GameRules.canTakeGems(playerState.gems, action.gems)) {
+  if (!GameRules.validateGemTake(action.gems, state.gemPool, playerState.gems)) {
     throw new Error('Cannot take those gems');
   }
 
@@ -244,6 +246,91 @@ function handleTakeGems(
     ...state,
     players: updatedPlayers,
     gemPool: updatedGemPool,
+  };
+}
+
+/**
+ * Handle DISCARD_GEMS action.
+ *
+ * Removes selected gems from a player and returns them to the pool.
+ * Used when player exceeds MAX_GEMS_PER_PLAYER after taking/reserving.
+ *
+ * @param state - Current GameState
+ * @param action - DISCARD_GEMS action with gems array
+ * @returns New GameState with updated gems and cleared pending discard
+ * @throws Error if discard is invalid
+ */
+function handleDiscardGems(
+  state: GameState,
+  action: Extract<GameAction, { type: 'DISCARD_GEMS' }>
+): GameState {
+  const playerState = state.players[action.playerIndex];
+
+  if (!playerState) {
+    throw new Error(`Invalid player index: ${action.playerIndex}`);
+  }
+
+  if (!state.pendingDiscard || state.pendingDiscard.playerIndex !== action.playerIndex) {
+    throw new Error('No pending discard for this player');
+  }
+
+  if (action.gems.length !== state.pendingDiscard.count) {
+    throw new Error('Invalid discard count');
+  }
+
+  const discardCounts: GemCost & { gold: number } = {
+    red: 0,
+    blue: 0,
+    green: 0,
+    white: 0,
+    black: 0,
+    gold: 0,
+  };
+
+  for (const gemColor of action.gems) {
+    const color = gemColor as Color;
+    discardCounts[color] = (discardCounts[color] || 0) + 1;
+  }
+
+  // Ensure player has enough gems to discard
+  const available = playerState.gems;
+  for (const color of ['red', 'blue', 'green', 'white', 'black', 'gold'] as const) {
+    const needed = discardCounts[color] || 0;
+    if ((available[color] || 0) < needed) {
+      throw new Error('Cannot discard gems not owned');
+    }
+  }
+
+  const updatedPlayers = state.players.map((p, idx) =>
+    idx === action.playerIndex
+      ? {
+          ...p,
+          gems: {
+            red: (p.gems.red || 0) - (discardCounts.red || 0),
+            blue: (p.gems.blue || 0) - (discardCounts.blue || 0),
+            green: (p.gems.green || 0) - (discardCounts.green || 0),
+            white: (p.gems.white || 0) - (discardCounts.white || 0),
+            black: (p.gems.black || 0) - (discardCounts.black || 0),
+            gold: (p.gems.gold || 0) - (discardCounts.gold || 0),
+          },
+        }
+      : p
+  );
+
+  const updatedGemPool = {
+    red: (state.gemPool.red || 0) + (discardCounts.red || 0),
+    blue: (state.gemPool.blue || 0) + (discardCounts.blue || 0),
+    green: (state.gemPool.green || 0) + (discardCounts.green || 0),
+    white: (state.gemPool.white || 0) + (discardCounts.white || 0),
+    black: (state.gemPool.black || 0) + (discardCounts.black || 0),
+    gold: (state.gemPool.gold || 0) + (discardCounts.gold || 0),
+  };
+
+  return {
+    ...state,
+    players: updatedPlayers,
+    gemPool: updatedGemPool,
+    pendingDiscard: undefined,
   };
 }
 
@@ -519,6 +606,9 @@ function handleEndTurn(
   state: GameState,
   action: Extract<GameAction, { type: 'END_TURN' }>
 ): GameState {
+  if (state.pendingDiscard) {
+    throw new Error('Cannot end turn while discard is pending');
+  }
   // Auto-award eligible nobles
   const eligibleNobles = GameRules.getEligibleNobles(state, action.playerIndex);
   let updatedState = state;
@@ -549,6 +639,7 @@ function handleEndTurn(
     ...updatedState,
     currentPlayerIndex: nextPlayerIndex,
     gamePhase: newGamePhase,
+    pendingDiscard: undefined,
   };
 }
 

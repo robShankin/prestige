@@ -198,18 +198,20 @@ describe('Game Engine', () => {
       const action: GameAction = {
         type: 'TAKE_GEMS',
         playerIndex: 0,
-        gems: ['red', 'blue'],
+        gems: ['red', 'blue', 'green'],
       };
 
       const result = gameReducer(state, action);
 
       expect(result.players[0].gems.red).toBe(1);
       expect(result.players[0].gems.blue).toBe(1);
+      expect(result.players[0].gems.green).toBe(1);
       expect(result.gemPool.red).toBe(3);
       expect(result.gemPool.blue).toBe(3);
+      expect(result.gemPool.green).toBe(3);
     });
 
-    it('should respect max 10 gem limit', () => {
+    it('should allow taking gems even if it exceeds 10 (discard required)', () => {
       const state = createMockGameState({
         players: [
           createMockPlayerState({
@@ -226,7 +228,7 @@ describe('Game Engine', () => {
         gems: ['red', 'red'],
       };
 
-      expect(() => gameReducer(state, action)).toThrow('Cannot take those gems');
+      expect(() => gameReducer(state, action)).not.toThrow();
     });
 
     it('should throw for invalid player index', () => {
@@ -258,10 +260,7 @@ describe('Game Engine', () => {
         gems: ['gold'],
       };
 
-      // This should not throw - canTakeGems validates
-      // Gold is a valid gem color in the system
-      const result = gameReducer(state, action);
-      expect(result.players[0].gems.gold).toBe(1);
+      expect(() => gameReducer(state, action)).toThrow('Cannot take those gems');
     });
 
     it('should not mutate original state', () => {
@@ -278,7 +277,7 @@ describe('Game Engine', () => {
       const action: GameAction = {
         type: 'TAKE_GEMS',
         playerIndex: 0,
-        gems: ['red'],
+        gems: ['red', 'red'],
       };
 
       const originalGems = state.gemPool.red;
