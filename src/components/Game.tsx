@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * Main Game component - renders the Splendor game UI.
+ * Main Game component - renders the Prestige game UI.
  *
  * Root React component that manages:
  * - Game state via useReducer
@@ -14,6 +14,7 @@ import type { GameState, GameAction } from '../types';
 import { initializeGame, gameReducer } from '../game/engine';
 import { TurnController } from '../game/turnController';
 import { AIPlayer } from '../ai/aiPlayer';
+import { GameSetup } from './GameSetup';
 import GameBoard from './GameBoard';
 import GameOver from './GameOver';
 import './Game.css';
@@ -63,14 +64,18 @@ function gameStateReducer(state: GameState | null, action: GameAction | { type: 
  * <Game numberOfOpponents={2} />  // Game with 1 human + 2 AI
  */
 export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
-  const totalPlayers = numberOfOpponents + 1;
+  const [selectedOpponents, setSelectedOpponents] = useState<1 | 2 | 3 | null>(null);
   const [gameState, dispatch] = useReducer(gameStateReducer, null as GameState | null);
   const [isLoading, setIsLoading] = useState(false);
   const [turnController, setTurnController] = useState<TurnController | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize game on mount or when numberOfOpponents changes
-  useEffect(() => {
+  const handleStartGame = (opponents: 1 | 2 | 3) => {
+    setSelectedOpponents(opponents);
+    setIsLoading(true);
+    setError(null);
+
+    const totalPlayers = opponents + 1;
     const newGameState = initializeGame(totalPlayers);
     dispatch({ type: 'INIT_GAME', gameState: newGameState });
 
@@ -82,7 +87,15 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
     }
 
     setTurnController(new TurnController(gameReducer, aiPlayers));
-  }, [totalPlayers]);
+    setIsLoading(false);
+  };
+
+  const handleRestart = () => {
+    setSelectedOpponents(null);
+    dispatch({ type: 'INIT_GAME', gameState: initializeGame(1) } as any);
+    setTurnController(null);
+    setError(null);
+  };
 
   const handleAction = async (action: GameAction) => {
     if (!gameState || !turnController || isLoading) return;
@@ -103,16 +116,15 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
     }
   };
 
-  const handleRestart = () => {
-    const newGameState = initializeGame(totalPlayers);
-    dispatch({ type: 'INIT_GAME', gameState: newGameState });
-    setError(null);
-  };
+  // Show setup screen if no opponents selected yet
+  if (selectedOpponents === null) {
+    return <GameSetup onStartGame={handleStartGame} />;
+  }
 
   if (!gameState) {
     return (
       <div className="game-setup">
-        <h1>Splendor</h1>
+        <h1>Prestige</h1>
         <p>Initializing game...</p>
       </div>
     );
@@ -132,7 +144,17 @@ export const Game: React.FC<GameProps> = ({ numberOfOpponents }) => {
   return (
     <div className="game-container">
       <div className="game-header">
-        <h1>Splendor</h1>
+        <div className="header-top">
+          <h1>♔ Prestige</h1>
+          <div className="header-buttons">
+            <button className="btn-restart" onClick={handleRestart} title="Start a new game">
+              🔄 New Game
+            </button>
+            <button className="btn-quit" onClick={handleRestart} title="Return to setup">
+              ✕ Menu
+            </button>
+          </div>
+        </div>
         <div className="game-status">
           <p>
             Current Player: <strong>{currentPlayer.name}</strong>

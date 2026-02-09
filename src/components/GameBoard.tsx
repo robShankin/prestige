@@ -44,11 +44,13 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onAction, isLoading, i
             <div key={noble.id} className="noble-card">
               <div className="noble-points">{noble.points}</div>
               <div className="noble-requirement">
+                <div className="requirement-label">Requires:</div>
                 {Object.entries(noble.requirement)
                   .filter(([, count]) => (count || 0) > 0)
                   .map(([color, count]) => (
-                    <div key={color} className={`gem-req gem-${color}`}>
-                      {count || 0}
+                    <div key={color} className={`gem-req gem-${color}`} title={color}>
+                      <span className="color-label">{color.charAt(0).toUpperCase()}</span>
+                      <span className="gem-amount">{count || 0}</span>
                     </div>
                   ))}
               </div>

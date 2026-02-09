@@ -48,20 +48,38 @@
 
 .noble-requirement {
   display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
   justify-content: center;
 }
 
-.gem-req {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.requirement-label {
   font-size: 0.75rem;
+  color: #ccc;
   font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gem-req {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.color-label {
+  font-weight: bold;
+  min-width: 12px;
+}
+
+.gem-amount {
+  font-size: 0.85rem;
 }
 
 /* Cards Section */

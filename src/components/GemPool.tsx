@@ -58,14 +58,14 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
       if (count === 0) return;
 
       const newSelected = [...selectedGems];
-      const existingIndex = newSelected.indexOf(color);
+      const sameColorCount = newSelected.filter(g => g === color).length;
 
-      if (existingIndex >= 0) {
-        // Remove gem
-        newSelected.splice(existingIndex, 1);
-      } else {
-        // Add gem if not at max
-        if (newSelected.length < 3) {
+      // Allow adding this color if:
+      // - We have less than 3 total gems selected AND
+      // - We have less than 2 of this color OR all selected gems are this color
+      if (newSelected.length < 3) {
+        const otherColors = newSelected.filter(g => g !== color).length;
+        if (sameColorCount < 2 && (otherColors === 0 || sameColorCount > 0)) {
           newSelected.push(color);
         }
       }
@@ -104,9 +104,11 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
               onClick={() => handleGemClick(color)}
               disabled={!isAvailable || disabled}
               aria-label={`${color} gem (${count} available)`}
+              title={`${color.charAt(0).toUpperCase() + color.slice(1)} - Click to select`}
             >
+              <div className="gem-label">{color.charAt(0).toUpperCase()}</div>
               <div className="gem-count">{count}</div>
-              {isSelected && <div className="selection-indicator"></div>}
+              {isSelected && <div className="selection-indicator">✓</div>}
             </button>
           );
         })}

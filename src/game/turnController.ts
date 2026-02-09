@@ -133,8 +133,19 @@ export class TurnController {
       // Add delay for UX (shows AI thinking)
       await this.delay(500);
 
-      // Get AI decision
-      const aiAction = aiPlayer.decideAction(currentState, currentPlayer);
+      // Get AI decision with timeout (max 2 seconds)
+      let aiAction: GameAction;
+      try {
+        const decisionPromise = Promise.resolve(aiPlayer.decideAction(currentState, currentPlayer));
+        aiAction = await Promise.race([
+          decisionPromise,
+          new Promise<GameAction>(reject => setTimeout(() => reject(new Error('AI decision timeout')), 2000))
+        ]);
+      } catch (error) {
+        // If AI times out or errors, fall back to END_TURN
+        console.warn('AI decision failed:', error);
+        aiAction = { type: 'END_TURN', playerIndex: currentState.currentPlayerIndex };
+      }
 
       // Apply action via gameReducer
       currentState = this.gameReducer(currentState, aiAction);

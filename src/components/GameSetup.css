@@ -1,0 +1,176 @@
+.game-setup {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.setup-container {
+  background: linear-gradient(135deg, #2d2d3d 0%, #3d3d4d 100%);
+  border-radius: 16px;
+  padding: 40px 60px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setup-container h1 {
+  font-size: 48px;
+  color: #ffd700;
+  margin: 0 0 10px 0;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.subtitle {
+  color: #a0a0b0;
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 40px;
+}
+
+.setup-section {
+  margin-bottom: 40px;
+}
+
+.setup-section h2 {
+  color: #ffffff;
+  font-size: 24px;
+  margin: 0 0 10px 0;
+}
+
+.setup-section p {
+  color: #c0c0d0;
+  font-size: 16px;
+  margin: 0 0 20px 0;
+}
+
+.opponent-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.opponent-btn {
+  background: linear-gradient(135deg, #3d3d4d 0%, #4d4d5d 100%);
+  border: 2px solid #505070;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #ffffff;
+}
+
+.opponent-btn:hover {
+  border-color: #ffd700;
+  background: linear-gradient(135deg, #4d4d5d 0%, #5d5d6d 100%);
+  transform: translateY(-2px);
+}
+
+.opponent-btn.selected {
+  border-color: #ffd700;
+  background: linear-gradient(135deg, #5d5d6d 0%, #6d6d7d 100%);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.opponent-count {
+  font-size: 36px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 8px;
+}
+
+.opponent-label {
+  font-size: 14px;
+  color: #c0c0d0;
+  margin-bottom: 8px;
+}
+
+.difficulty-hint {
+  font-size: 12px;
+  color: #a0a0b0;
+}
+
+.setup-section.info {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.setup-section.info h3 {
+  color: #ffd700;
+  font-size: 18px;
+  margin: 0 0 15px 0;
+}
+
+.setup-section.info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.setup-section.info li {
+  color: #c0c0d0;
+  font-size: 14px;
+  margin-bottom: 10px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.setup-section.info li:before {
+  content: '•';
+  color: #ffd700;
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+.setup-section.info strong {
+  color: #ffd700;
+}
+
+.start-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1e1e2e;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+}
+
+.start-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .setup-container {
+    padding: 30px 20px;
+  }
+
+  .setup-container h1 {
+    font-size: 36px;
+  }
+
+  .opponent-buttons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
