@@ -328,7 +328,7 @@ describe('GameRules', () => {
       const player = createMockPlayerState({ purchasedCards: [] });
       const cost = { red: 2, blue: 1 };
 
-      const discount = GameRules.calculateGemDiscount(player, cost);
+      const discount = GameRules.calculateGemDiscount(player);
 
       expect(discount.red).toBe(0);
       expect(discount.blue).toBe(0);
@@ -339,7 +339,7 @@ describe('GameRules', () => {
       const player = createMockPlayerState({ purchasedCards: [redCard] });
       const cost = { red: 2 };
 
-      const discount = GameRules.calculateGemDiscount(player, cost);
+      const discount = GameRules.calculateGemDiscount(player);
 
       expect(discount.red).toBe(1);
     });
@@ -353,7 +353,7 @@ describe('GameRules', () => {
       });
       const cost = { red: 2, blue: 2, green: 2 };
 
-      const discount = GameRules.calculateGemDiscount(player, cost);
+      const discount = GameRules.calculateGemDiscount(player);
 
       expect(discount.red).toBe(1);
       expect(discount.blue).toBe(1);
@@ -368,7 +368,7 @@ describe('GameRules', () => {
       });
       const cost = { red: 3 };
 
-      const discount = GameRules.calculateGemDiscount(player, cost);
+      const discount = GameRules.calculateGemDiscount(player);
 
       expect(discount.red).toBe(2);
     });
@@ -378,7 +378,7 @@ describe('GameRules', () => {
       const player = createMockPlayerState({ purchasedCards: [goldCard] });
       const cost: any = { gold: 2 };
 
-      const discount = GameRules.calculateGemDiscount(player, cost);
+      const discount = GameRules.calculateGemDiscount(player);
 
       expect((discount as any).gold || 0).toBe(0);
     });
@@ -387,7 +387,7 @@ describe('GameRules', () => {
       const player = createMockPlayerState({ purchasedCards: [] });
       const cost = { red: 1, blue: 1 };
 
-      const discount = GameRules.calculateGemDiscount(player, cost);
+      const discount = GameRules.calculateGemDiscount(player);
 
       expect(discount.red).toBe(0);
       expect(discount.blue).toBe(0);

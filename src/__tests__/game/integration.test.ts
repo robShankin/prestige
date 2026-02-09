@@ -193,7 +193,7 @@ describe('Game Flow Integration', () => {
     if (redCard) {
       gameState.players[0].purchasedCards = [redCard];
 
-      const discount = GameRules.calculateGemDiscount(gameState.players[0], { red: 2 });
+      const discount = GameRules.calculateGemDiscount(gameState.players[0]);
       expect(discount.red).toBe(1);
     }
   });

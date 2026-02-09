@@ -58,7 +58,7 @@ describe('Branch Coverage Tests', () => {
       ];
       const player = createMockPlayerState({ purchasedCards: cards });
 
-      const discount = GameRules.calculateGemDiscount(player, { red: 5 });
+      const discount = GameRules.calculateGemDiscount(player);
       expect(discount.red).toBe(3);
     });
 

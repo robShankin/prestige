@@ -1,6 +1,7 @@
 /**
  * GameBoard component - main game layout with nobles, cards, gem pool, and players
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useMemo } from 'react';
 import type { GameState, GameAction } from '../types';

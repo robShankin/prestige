@@ -1,6 +1,7 @@
 /**
  * ActionButtons component - displays available actions as buttons
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useCallback } from 'react';
 import type { GameAction } from '../types';

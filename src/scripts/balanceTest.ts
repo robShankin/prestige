@@ -2,6 +2,7 @@
  * Balance testing script - simulates hundreds of games to analyze game balance
  * Run with: npm run test:balance
  */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { initializeGame, gameReducer } from '../game/engine';
 import { GameAnalytics } from '../game/analytics';
