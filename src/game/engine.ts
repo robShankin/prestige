@@ -106,6 +106,7 @@ export function initializeGame(playerCount: number): GameState {
     },
     nobles: selectedNobles,
     displayedCards,
+    pendingRefill: { level1: 0, level2: 0, level3: 0 },
     gemPool,
     gamePhase: 'setup',
   };
@@ -337,12 +338,12 @@ function handleDiscardGems(
 /**
  * Handle RESERVE_CARD action.
  *
- * Reserves a card from the displayed cards, removes it from display, refills from deck,
+ * Reserves a card from the displayed cards, removes it from display, refills after end turn,
  * and gives player 1 gold gem. Max 3 reserved cards per player.
  *
  * @param state - Current GameState
  * @param action - RESERVE_CARD action with card to reserve
- * @returns New GameState with reserved card and refilled display
+ * @returns New GameState with reserved card and display updated
  * @throws Error if player already has 3 reserved cards or card not in display
  */
 function handleReserveCard(
@@ -379,23 +380,7 @@ function handleReserveCard(
     ].filter((c) => c.id !== action.card.id),
   };
 
-  // Refill from deck
   const deckKey = `level${cardLevel}` as const;
-  const remainingInDeck = state.deck[deckKey];
-
-  if (remainingInDeck.length > 0) {
-    const cardToAdd = remainingInDeck[0];
-    updatedDisplayedCards[deckKey] = [
-      ...updatedDisplayedCards[deckKey],
-      cardToAdd,
-    ];
-  }
-
-  // Update deck
-  const updatedDeck = {
-    ...state.deck,
-    [deckKey]: state.deck[deckKey].slice(1),
-  };
 
   // Add reserved card and give gold gem
   const updatedPlayers = state.players.map((p, idx) =>
@@ -421,7 +406,12 @@ function handleReserveCard(
     ...state,
     players: updatedPlayers,
     displayedCards: updatedDisplayedCards as typeof state.displayedCards,
-    deck: updatedDeck,
+    pendingRefill: {
+      level1: (state.pendingRefill?.level1 || 0) + (deckKey === 'level1' ? 1 : 0),
+      level2: (state.pendingRefill?.level2 || 0) + (deckKey === 'level2' ? 1 : 0),
+      level3: (state.pendingRefill?.level3 || 0) + (deckKey === 'level3' ? 1 : 0),
+    },
+    deck: state.deck,
     gemPool: updatedGemPool,
   };
 }
@@ -486,14 +476,6 @@ function handlePurchaseCard(
       ),
     };
 
-    // Refill from deck if available
-    if (state.deck[levelKey].length > 0) {
-      const refillCard = state.deck[levelKey][0];
-      updatedDisplayedCards[levelKey] = [
-        ...updatedDisplayedCards[levelKey],
-        refillCard,
-      ];
-    }
   } else if (playerState.reservedCards.some((c) => c.id === action.card.id)) {
     // Card is in reserved cards
     cardFoundInReserved = true;
@@ -522,20 +504,22 @@ function handlePurchaseCard(
   // Return gems to pool
   const updatedGemPool = addGems(state.gemPool, gemsToSpend);
 
-  // Update deck if card was from displayed
-  let updatedDeck = state.deck;
+  const pendingRefill = {
+    level1: state.pendingRefill?.level1 || 0,
+    level2: state.pendingRefill?.level2 || 0,
+    level3: state.pendingRefill?.level3 || 0,
+  };
+
   if (cardFoundInDisplayed) {
-    updatedDeck = {
-      ...state.deck,
-      [levelKey]: state.deck[levelKey].slice(1),
-    };
+    pendingRefill[levelKey] += 1;
   }
 
   return {
     ...state,
     players: updatedPlayers,
     displayedCards: updatedDisplayedCards,
-    deck: updatedDeck,
+    pendingRefill,
+    deck: state.deck,
     gemPool: updatedGemPool,
   };
 }
@@ -588,6 +572,43 @@ function handleClaimNoble(
   };
 }
 
+function applyPendingRefill(state: GameState): GameState {
+  const pending = state.pendingRefill;
+  if (!pending || (pending.level1 === 0 && pending.level2 === 0 && pending.level3 === 0)) {
+    return state;
+  }
+
+  const updatedDisplayedCards = {
+    ...state.displayedCards,
+    level1: [...state.displayedCards.level1],
+    level2: [...state.displayedCards.level2],
+    level3: [...state.displayedCards.level3],
+  };
+
+  const updatedDeck = {
+    ...state.deck,
+    level1: [...state.deck.level1],
+    level2: [...state.deck.level2],
+    level3: [...state.deck.level3],
+  };
+
+  (['level1', 'level2', 'level3'] as const).forEach((levelKey) => {
+    let toDraw = pending[levelKey] || 0;
+    while (toDraw > 0 && updatedDeck[levelKey].length > 0) {
+      updatedDisplayedCards[levelKey].push(updatedDeck[levelKey][0]);
+      updatedDeck[levelKey] = updatedDeck[levelKey].slice(1);
+      toDraw -= 1;
+    }
+  });
+
+  return {
+    ...state,
+    displayedCards: updatedDisplayedCards,
+    deck: updatedDeck,
+    pendingRefill: { level1: 0, level2: 0, level3: 0 },
+  };
+}
+
 /**
  * Handle END_TURN action.
  *
@@ -609,9 +630,10 @@ function handleEndTurn(
   if (state.pendingDiscard) {
     throw new Error('Cannot end turn while discard is pending');
   }
+  const refilledState = applyPendingRefill(state);
   // Auto-award eligible nobles
-  const eligibleNobles = GameRules.getEligibleNobles(state, action.playerIndex);
-  let updatedState = state;
+  const eligibleNobles = GameRules.getEligibleNobles(refilledState, action.playerIndex);
+  let updatedState = refilledState;
 
   for (const noble of eligibleNobles) {
     updatedState = handleClaimNoble(updatedState, {

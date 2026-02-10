@@ -485,8 +485,8 @@ export class TurnController {
         return false;
       }
 
-      // Check if player meets requirements (gem bonuses from purchased cards)
-      return GameRules.canAfford(player.gems, noble.requirement);
+      // Check if player meets requirements based on purchased cards
+      return GameRules.canClaimNoble(player, noble);
     });
 
     // Award each eligible noble

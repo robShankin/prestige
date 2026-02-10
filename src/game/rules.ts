@@ -173,7 +173,15 @@ export class GameRules {
    * @returns True if player meets gem requirements, false otherwise
    */
   static canClaimNoble(playerState: PlayerState, noble: Noble): boolean {
-    return this.canAfford(playerState.gems, noble.requirement);
+    const colors: (keyof GemCost)[] = ['red', 'blue', 'green', 'white', 'black'];
+    for (const color of colors) {
+      const needed = noble.requirement[color] || 0;
+      const have = playerState.purchasedCards.filter(card => card.color === color).length;
+      if (have < needed) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

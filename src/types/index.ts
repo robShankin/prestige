@@ -52,6 +52,11 @@ export interface GameState {
     level2: Card[];
     level3: Card[];
   };
+  pendingRefill?: {
+    level1: number;
+    level2: number;
+    level3: number;
+  };
   gemPool: GemCost & { gold: number };
   gamePhase: 'setup' | 'active' | 'endGame' | 'finished';
   winner?: PlayerState;
