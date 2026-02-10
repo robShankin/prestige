@@ -383,7 +383,7 @@ describe('Game Engine', () => {
       expect(result.displayedCards.level1.length).toBe(0);
     });
 
-    it('should refill displayed cards from deck', () => {
+    it('should queue refill instead of drawing immediately', () => {
       const card = createMockCard({ id: 'card-1', level: 1 });
       const refillCard = createMockCard({ id: 'card-refill', level: 1 });
       const state = createMockGameState({
@@ -409,7 +409,9 @@ describe('Game Engine', () => {
 
       const result = gameReducer(state, action);
 
-      expect(result.displayedCards.level1[0].id).toBe('card-refill');
+      expect(result.displayedCards.level1.length).toBe(0);
+      expect(result.pendingRefill?.level1).toBe(1);
+      expect(result.deck.level1[0]?.id).toBe('card-refill');
     });
 
     it('should throw when max reserved reached', () => {
@@ -577,7 +579,7 @@ describe('Game Engine', () => {
       expect(result.gemPool.red).toBe(5);
     });
 
-    it('should refill displayed cards', () => {
+    it('should queue refill instead of drawing immediately', () => {
       const card = createMockCard({ id: 'card-1', level: 1, cost: { red: 1 } });
       const refillCard = createMockCard({ id: 'card-refill', level: 1 });
       const state = createMockGameState({
@@ -608,7 +610,9 @@ describe('Game Engine', () => {
 
       const result = gameReducer(state, action);
 
-      expect(result.displayedCards.level1[0].id).toBe('card-refill');
+      expect(result.displayedCards.level1.length).toBe(0);
+      expect(result.pendingRefill?.level1).toBe(1);
+      expect(result.deck.level1[0]?.id).toBe('card-refill');
     });
 
     it('should throw when player cannot afford', () => {
@@ -645,7 +649,7 @@ describe('Game Engine', () => {
         players: [
           createMockPlayerState({
             id: 'player1',
-            gems: createGemPool({ red: 2, blue: 0, green: 0, white: 0, black: 0, gold: 0 }),
+            purchasedCards: [createMockCard({ color: 'red' })],
             nobles: [],
           }),
         ],
@@ -674,7 +678,7 @@ describe('Game Engine', () => {
           createMockPlayerState({
             id: 'player1',
             points: 5,
-            gems: createGemPool({ red: 2, blue: 0, green: 0, white: 0, black: 0, gold: 0 }),
+            purchasedCards: [createMockCard({ color: 'red' })],
             nobles: [],
           }),
         ],
@@ -698,7 +702,7 @@ describe('Game Engine', () => {
         players: [
           createMockPlayerState({
             id: 'player1',
-            gems: createGemPool({ red: 2, blue: 0, green: 0, white: 0, black: 0, gold: 0 }),
+            purchasedCards: [createMockCard({ color: 'red' })],
             nobles: [],
           }),
         ],
@@ -812,7 +816,7 @@ describe('Game Engine', () => {
         players: [
           createMockPlayerState({
             id: 'player1',
-            gems: createGemPool({ red: 2, blue: 0, green: 0, white: 0, black: 0, gold: 0 }),
+            purchasedCards: [createMockCard({ color: 'red' })],
             nobles: [],
           }),
           createMockPlayerState({ id: 'player2', isAI: false }),
