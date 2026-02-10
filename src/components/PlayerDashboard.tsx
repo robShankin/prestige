@@ -4,8 +4,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import React from 'react';
-import type { PlayerState, Noble } from '../types';
+import type { PlayerState, Noble as NobleType } from '../types';
 import Card from './Card';
+import NobleComponent from './Noble';
 import './PlayerDashboard.css';
 
 interface PlayerDashboardProps {
@@ -13,7 +14,7 @@ interface PlayerDashboardProps {
   isCurrent: boolean;
   reservedCards?: any[];
   purchasedCardCount?: number;
-  nobles?: Noble[];
+  nobles?: NobleType[];
 }
 
 const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
@@ -115,9 +116,7 @@ const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
           <h4>Nobles ({nobles.length})</h4>
           <div className="nobles-display">
             {nobles.map((noble) => (
-              <div key={noble.id} className="noble-mini">
-                <div className="noble-mini-points">{noble.points}</div>
-              </div>
+              <NobleComponent key={noble.id} noble={noble} />
             ))}
           </div>
         </div>

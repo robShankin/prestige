@@ -7,6 +7,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import type { GameState, GameAction } from '../types';
 import { TurnController } from '../game/turnController';
 import Card from './Card';
+import NobleComponent from './Noble';
 import GemPool from './GemPool';
 import PlayerDashboard from './PlayerDashboard';
 import ActionButtons from './ActionButtons';
@@ -61,20 +62,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         <h2>Nobles</h2>
         <div className="nobles-grid">
           {gameState.nobles.map((noble) => (
-            <div key={noble.id} className="noble-card">
-              <div className="noble-points">{noble.points}</div>
-              <div className="noble-requirement">
-                <div className="requirement-label">Requires:</div>
-                {Object.entries(noble.requirement)
-                  .filter(([, count]) => (count || 0) > 0)
-                  .map(([color, count]) => (
-                    <div key={color} className={`gem-req gem-${color}`} title={color}>
-                      <span className="color-label">{color.charAt(0).toUpperCase()}</span>
-                      <span className="gem-amount">{count || 0}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
+            <NobleComponent key={noble.id} noble={noble} />
           ))}
         </div>
       </section>

@@ -1,0 +1,116 @@
+/* Noble Token Styling - Compressed Card Format */
+.noble {
+  position: relative;
+  width: 130px;
+  height: 85px;
+  border-radius: 6px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Points displayed top-right (larger relative to token size) */
+.noble-points {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+/* Noble Content Area */
+.noble-content {
+  flex: 1;
+  padding: 8px;
+}
+
+/* Noble Cost Display (bottom left, stacked vertically, larger relative) */
+.noble-cost {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+}
+
+.noble-cost-gem {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65em;
+  font-weight: bold;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cost-number {
+  font-size: 0.75em;
+  color: rgba(255, 255, 255, 0.9);
+  min-width: 12px;
+  text-align: center;
+}
+
+/* Gem Color Styles */
+.noble-cost-gem.gem-red {
+  background: #e74c3c;
+}
+
+.noble-cost-gem.gem-blue {
+  background: #3498db;
+}
+
+.noble-cost-gem.gem-green {
+  background: #2ecc71;
+}
+
+.noble-cost-gem.gem-white {
+  background: #ecf0f1;
+  color: #333;
+}
+
+.noble-cost-gem.gem-black {
+  background: #2c3e50;
+}
+
+.noble-cost-gem.gem-gold {
+  background: #f39c12;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .noble {
+    width: 110px;
+    height: 72px;
+  }
+
+  .noble-points {
+    top: 4px;
+    right: 6px;
+    font-size: 1em;
+  }
+
+  .noble-cost-gem {
+    width: 16px;
+    height: 16px;
+    font-size: 0.6em;
+  }
+
+  .noble-cost {
+    bottom: 6px;
+    left: 6px;
+    gap: 1px;
+  }
+}

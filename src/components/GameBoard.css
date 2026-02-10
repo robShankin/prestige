@@ -27,63 +27,8 @@
 
 .nobles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 15px;
-}
-
-.noble-card {
-  background: linear-gradient(135deg, #2d3140 0%, #1a1a2e 100%);
-  border: 2px solid #ffc107;
-  border-radius: 8px;
-  padding: 12px;
-  text-align: center;
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-}
-
-.noble-points {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #ffc107;
-}
-
-.noble-requirement {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-  justify-content: center;
-}
-
-.requirement-label {
-  font-size: 0.75rem;
-  color: #ccc;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.gem-req {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.color-label {
-  font-weight: bold;
-  min-width: 12px;
-}
-
-.gem-amount {
-  font-size: 0.85rem;
 }
 
 /* Cards Section */
@@ -243,7 +188,7 @@
   }
 
   .nobles-grid {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 
   .card-grid {

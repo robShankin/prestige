@@ -207,9 +207,7 @@ export const Game: React.FC<GameProps> = () => {
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const isCurrentPlayerAI = currentPlayer.isAI;
-  const isDiscarding =
-    Boolean(gameState.pendingDiscard) &&
-    gameState.pendingDiscard.playerIndex === gameState.currentPlayerIndex;
+  const isDiscarding = gameState.pendingDiscard?.playerIndex === gameState.currentPlayerIndex;
 
   return (
     <div className="game-container">

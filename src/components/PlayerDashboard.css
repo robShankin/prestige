@@ -241,27 +241,9 @@
 }
 
 .nobles-display {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.noble-mini {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
-  border: 2px solid #ffa000;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.noble-mini-points {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #000;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
 }
 
 /* Responsive */

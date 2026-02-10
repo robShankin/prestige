@@ -23,6 +23,15 @@ const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClick
     gold: 'gem-gold',
   };
 
+  const bandColorMap: Record<string, string> = {
+    red: '#e74c3c',
+    blue: '#3498db',
+    green: '#2ecc71',
+    white: '#ecf0f1',
+    black: '#2c3e50',
+    gold: '#f39c12',
+  };
+
   const costEntries = Object.entries(card.cost)
     .filter(([, count]) => (count || 0) > 0)
     .sort((a, b) => (b[1] || 0) - (a[1] || 0));
@@ -33,6 +42,9 @@ const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClick
       onClick={isClickable ? onClick : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : -1}
+      style={{
+        '--band-color': bandColorMap[card.color] || '#1a1a2e',
+      } as React.CSSProperties}
       onKeyDown={
         isClickable
           ? (e) => {
@@ -44,22 +56,28 @@ const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClick
           : undefined
       }
     >
-      {/* Points */}
-      {card.points > 0 && <div className="card-points">{card.points}</div>}
+      {/* Colored Band with Points */}
+      <div className="card-band">
+        {card.points > 0 && <div className="card-points">{card.points}</div>}
+      </div>
 
       {/* Card Content */}
-      <div className="card-content">
-        {/* Gem Color Bonus */}
-        <div className={`gem-bonus-bar ${colorClasses[card.color] || ''}`}></div>
+      <div className="card-content"></div>
 
-        {/* Cost Display */}
-        <div className="card-cost">
-          {costEntries.map(([color, count]) => (
-            <div key={color} className={`cost-gem ${colorClasses[color] || ''}`}>
-              <span className="cost-number">{count}</span>
-            </div>
-          ))}
-        </div>
+      {/* Cost Display */}
+      <div className="card-cost">
+        {costEntries.map(([color, count]) => (
+          <div key={color} className={`cost-gem ${colorClasses[color] || ''}`}>
+            <span className="cost-number">{count}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Card Level */}
+      <div className="card-level-indicator">
+        {card.level === 1 && 'I'}
+        {card.level === 2 && 'II'}
+        {card.level === 3 && 'III'}
       </div>
 
       {/* State Overlays */}
