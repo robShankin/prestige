@@ -102,7 +102,8 @@ export const Game: React.FC<GameProps> = () => {
     const aiPlayers = new Map<number, AIPlayer>();
     for (let i = 1; i < totalPlayers; i++) {
       const difficulty = difficulties[i - 1] || 'medium';
-      aiPlayers.set(i, new AIPlayer(`ai-${i}`, difficulty));
+      const profile = AIPlayer.createProfile(difficulty);
+      aiPlayers.set(i, new AIPlayer(`ai-${i}`, difficulty, profile));
     }
 
     setTurnController(new TurnController(gameReducer, aiPlayers));

@@ -10,6 +10,14 @@
 import type { GameState, PlayerState, GameAction, Card, Noble, GemCost, Color } from '../types';
 import { GameRules } from '../game/rules';
 
+type AIProfile = {
+  focusColors: Color[];
+  reservePointsMin: number;
+  randomMoveChance: number;
+  nobleMissingMax: number;
+  goldAffordThreshold: number;
+};
+
 /**
  * AIPlayer - Implements CPU opponent decision-making.
  *
@@ -19,6 +27,7 @@ import { GameRules } from '../game/rules';
 export class AIPlayer {
   private difficulty: 'easy' | 'medium' | 'hard';
   private playerId: string;
+  private profile: AIProfile;
 
   /**
    * Create a new AI player.
@@ -26,9 +35,48 @@ export class AIPlayer {
    * @param playerId - Unique identifier for this player
    * @param difficulty - Strategy difficulty (easy|medium|hard), defaults to 'medium'
    */
-  constructor(playerId: string, difficulty: 'easy' | 'medium' | 'hard' = 'medium') {
+  constructor(
+    playerId: string,
+    difficulty: 'easy' | 'medium' | 'hard' = 'medium',
+    profile: AIProfile = AIPlayer.createProfile(difficulty)
+  ) {
     this.playerId = playerId;
     this.difficulty = difficulty;
+    this.profile = profile;
+  }
+
+  static createProfile(difficulty: 'easy' | 'medium' | 'hard'): AIProfile {
+    const colors: Color[] = ['red', 'blue', 'green', 'white', 'black'];
+    const shuffled = [...colors].sort(() => Math.random() - 0.5);
+    const focusColors = shuffled.slice(0, 2);
+
+    if (difficulty === 'easy') {
+      return {
+        focusColors,
+        reservePointsMin: 3,
+        randomMoveChance: 0.7,
+        nobleMissingMax: 2,
+        goldAffordThreshold: 1,
+      };
+    }
+
+    if (difficulty === 'hard') {
+      return {
+        focusColors,
+        reservePointsMin: Math.random() < 0.5 ? 3 : 2,
+        randomMoveChance: 0.05,
+        nobleMissingMax: 1,
+        goldAffordThreshold: Math.random() < 0.5 ? 1 : 2,
+      };
+    }
+
+    return {
+      focusColors,
+      reservePointsMin: Math.random() < 0.4 ? 2 : 3,
+      randomMoveChance: 0.25,
+      nobleMissingMax: Math.random() < 0.5 ? 1 : 2,
+      goldAffordThreshold: Math.random() < 0.5 ? 1 : 2,
+    };
   }
 
   /**
@@ -77,36 +125,33 @@ export class AIPlayer {
     const validGemMoves = this.getValidGemMoves(gameState, playerState);
     const isOpeningTurn = this.isOpeningTurn(playerState);
 
-    const actions: GameAction[] = [];
+    // Sometimes buy a card if affordable
+    if (affordableCards.length > 0 && Math.random() < 0.35) {
+      const card = affordableCards[Math.floor(Math.random() * affordableCards.length)];
+      return { type: 'PURCHASE_CARD', playerIndex, card };
+    }
 
-    // 30% bias toward purchasing if possible
+    // Prefer taking gems (inexperienced players tend to gather first)
+    if (validGemMoves.length > 0) {
+      const gems = this.pickRandomGemMove(validGemMoves);
+      if (gems.length > 0) {
+        return { type: 'TAKE_GEMS', playerIndex, gems };
+      }
+    }
+
+    // Occasionally reserve later in the game
+    if (!isOpeningTurn && reservableCards.length > 0 && Math.random() < 0.25) {
+      const card = reservableCards[Math.floor(Math.random() * reservableCards.length)];
+      return { type: 'RESERVE_CARD', playerIndex, card };
+    }
+
+    // Fallback: buy if possible, otherwise end turn
     if (affordableCards.length > 0) {
-      for (let i = 0; i < 3; i++) {
-        const card = affordableCards[Math.floor(Math.random() * affordableCards.length)];
-        actions.push({ type: 'PURCHASE_CARD', playerIndex, card });
-      }
+      const card = affordableCards[Math.floor(Math.random() * affordableCards.length)];
+      return { type: 'PURCHASE_CARD', playerIndex, card };
     }
 
-    // Add gem collection moves (opening turn: emphasize taking gems)
-    validGemMoves.forEach(gems => {
-      actions.push({ type: 'TAKE_GEMS', playerIndex, gems });
-      if (isOpeningTurn) {
-        actions.push({ type: 'TAKE_GEMS', playerIndex, gems });
-      }
-    });
-
-    // Add reserve moves
-    if (reservableCards.length > 0 && !isOpeningTurn) {
-      for (let i = 0; i < 2; i++) {
-        const card = reservableCards[Math.floor(Math.random() * reservableCards.length)];
-        actions.push({ type: 'RESERVE_CARD', playerIndex, card });
-      }
-    }
-
-    // Fallback to END_TURN
-    actions.push({ type: 'END_TURN', playerIndex });
-
-    return actions[Math.floor(Math.random() * actions.length)];
+    return { type: 'END_TURN', playerIndex };
   }
 
   /**
@@ -135,8 +180,8 @@ export class AIPlayer {
     const reservableCards = this.getReservableCards(gameState, playerState);
     const isOpeningTurn = this.isOpeningTurn(playerState);
 
-    // 40% chance to pick random valid action for unpredictability
-    if (Math.random() < 0.4) {
+    // Chance to pick random valid action for unpredictability
+    if (Math.random() < this.profile.randomMoveChance) {
       const validGemMoves = this.getValidGemMoves(gameState, playerState);
       const allMoves: GameAction[] = [];
 
@@ -161,6 +206,12 @@ export class AIPlayer {
       }
     }
 
+    const displayedCards = [
+      ...gameState.displayedCards.level1,
+      ...gameState.displayedCards.level2,
+      ...gameState.displayedCards.level3,
+    ];
+
     // Priority 1: Purchase cards that lead to nobles
     if (affordableCards.length > 0 && reachableNobles.length > 0) {
       const nobleCards = affordableCards.filter(card => {
@@ -171,49 +222,55 @@ export class AIPlayer {
       });
 
       if (nobleCards.length > 0) {
-        const bestCard = nobleCards.sort((a, b) => b.points - a.points)[0];
+        const bestCard = nobleCards.sort((a, b) => {
+          const scoreA = this.scoreCard(a, playerState, gameState.nobles, 'medium');
+          const scoreB = this.scoreCard(b, playerState, gameState.nobles, 'medium');
+          return scoreB - scoreA;
+        })[0];
         return { type: 'PURCHASE_CARD', playerIndex, card: bestCard };
       }
     }
 
-    // Priority 2: Purchase any affordable card
+    // Priority 2: Purchase best affordable card
     if (affordableCards.length > 0) {
       const bestCard = affordableCards.sort((a, b) => {
-        const scoreA = this.evaluateCard(a, playerState, gameState.nobles);
-        const scoreB = this.evaluateCard(b, playerState, gameState.nobles);
+        const scoreA = this.scoreCard(a, playerState, gameState.nobles, 'medium');
+        const scoreB = this.scoreCard(b, playerState, gameState.nobles, 'medium');
         return scoreB - scoreA;
       })[0];
       return { type: 'PURCHASE_CARD', playerIndex, card: bestCard };
     }
 
-    // Priority 3: Collect gems for next purchase
-    const displayedCards = [
-      ...gameState.displayedCards.level1,
-      ...gameState.displayedCards.level2,
-      ...gameState.displayedCards.level3,
-    ];
-
-    const targetCards = displayedCards.filter(card => {
-      const affordableWithGold = this.canAffordWithGold(playerState, card, 1);
-      return affordableWithGold;
-    });
-
-    if (targetCards.length > 0) {
-      const gemsNeeded = this.findBestGemCollection(targetCards, playerState.gems);
-      if (gemsNeeded.length > 0) {
-        return { type: 'TAKE_GEMS', playerIndex, gems: gemsNeeded };
-      }
+    // Priority 3: Collect gems toward top targets
+    const targetCards = this.selectTargetCards(displayedCards, playerState, gameState.nobles, 'medium', 2);
+    const gemsNeeded = this.chooseBestGemMove(gameState, playerState, targetCards, 'medium');
+    if (gemsNeeded.length > 0) {
+      return { type: 'TAKE_GEMS', playerIndex, gems: gemsNeeded };
     }
 
-    // Priority 4: Reserve high-value cards
-    if (reservableCards.length > 0) {
+    // Priority 4: Reserve high-value or blocking cards
+    if (!isOpeningTurn && reservableCards.length > 0) {
+      const opponentNeeds = this.predictOpponentNeeds(gameState, playerIndex);
       const bestReserve = reservableCards.sort((a, b) => {
-        const shouldReserveA = this.shouldReserveCard(a, gameState, playerIndex) ? 1 : 0;
-        const shouldReserveB = this.shouldReserveCard(b, gameState, playerIndex) ? 1 : 0;
-        return (shouldReserveB * b.points) - (shouldReserveA * a.points);
+        let scoreA = this.scoreCard(a, playerState, gameState.nobles, 'medium');
+        let scoreB = this.scoreCard(b, playerState, gameState.nobles, 'medium');
+
+        if (opponentNeeds.some(need => this.cardMatchesRequirement(a, need))) {
+          scoreA += 8;
+        }
+        if (opponentNeeds.some(need => this.cardMatchesRequirement(b, need))) {
+          scoreB += 8;
+        }
+
+        const deficitA = this.getCardDeficit(playerState, a).missingAfterGold;
+        const deficitB = this.getCardDeficit(playerState, b).missingAfterGold;
+        scoreA += Math.max(0, 3 - deficitA) * 2;
+        scoreB += Math.max(0, 3 - deficitB) * 2;
+
+        return scoreB - scoreA;
       })[0];
 
-      if (!isOpeningTurn && this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
+      if (this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
         return { type: 'RESERVE_CARD', playerIndex, card: bestReserve };
       }
     }
@@ -252,8 +309,9 @@ export class AIPlayer {
       ...gameState.displayedCards.level2,
       ...gameState.displayedCards.level3,
     ];
+    const isOpeningTurn = this.isOpeningTurn(playerState);
 
-    // Priority 1: Purchase cards that complete noble requirements
+    // Priority 1: Purchase cards that complete noble requirements or win the game
     if (affordableCards.length > 0) {
       const nobleCards = affordableCards.filter(card => {
         const tempCards = [...playerState.purchasedCards, card];
@@ -262,14 +320,12 @@ export class AIPlayer {
 
       if (nobleCards.length > 0) {
         const bestCard = nobleCards.sort((a, b) => {
-          const scoreA = this.evaluateCard(a, playerState, gameState.nobles);
-          const scoreB = this.evaluateCard(b, playerState, gameState.nobles);
+          const scoreA = this.scoreCard(a, playerState, gameState.nobles, 'hard');
+          const scoreB = this.scoreCard(b, playerState, gameState.nobles, 'hard');
           return scoreB - scoreA;
         })[0];
 
-        // Check if purchase gets us to winning points
-        const pointsAfter = playerState.points + bestCard.points;
-        if (pointsAfter >= GameRules.WINNING_POINTS) {
+        if (playerState.points + bestCard.points >= GameRules.WINNING_POINTS) {
           return { type: 'PURCHASE_CARD', playerIndex, card: bestCard };
         }
 
@@ -277,65 +333,50 @@ export class AIPlayer {
       }
     }
 
-    // Priority 2: Purchase highest-point affordable cards
+    // Priority 2: Purchase best affordable card
     if (affordableCards.length > 0) {
       const bestCard = affordableCards.sort((a, b) => {
-        const scoreA = this.evaluateCard(a, playerState, gameState.nobles);
-        const scoreB = this.evaluateCard(b, playerState, gameState.nobles);
+        const scoreA = this.scoreCard(a, playerState, gameState.nobles, 'hard');
+        const scoreB = this.scoreCard(b, playerState, gameState.nobles, 'hard');
         return scoreB - scoreA;
       })[0];
 
-      if (bestCard.points >= 3 || playerState.points + bestCard.points >= GameRules.WINNING_POINTS) {
-        return { type: 'PURCHASE_CARD', playerIndex, card: bestCard };
-      }
+      return { type: 'PURCHASE_CARD', playerIndex, card: bestCard };
     }
 
-    // Priority 3: Plan gem collection to reach next card
-    const affordableWithGoldLimit = displayedCards.filter(card => {
-      return this.canAffordWithGold(playerState, card, 2);
-    });
-
-    if (affordableWithGoldLimit.length > 0) {
-      const gemsNeeded = this.findBestGemCollection(affordableWithGoldLimit, playerState.gems);
-      if (gemsNeeded.length > 0 && GameRules.validateGemTake(gemsNeeded, gameState.gemPool, playerState.gems)) {
-        return { type: 'TAKE_GEMS', playerIndex, gems: gemsNeeded };
-      }
+    // Priority 3: Choose gems that move toward top targets
+    const targetCards = this.selectTargetCards(displayedCards, playerState, gameState.nobles, 'hard', 3);
+    const gemsNeeded = this.chooseBestGemMove(gameState, playerState, targetCards, 'hard');
+    if (gemsNeeded.length > 0 && GameRules.validateGemTake(gemsNeeded, gameState.gemPool, playerState.gems)) {
+      return { type: 'TAKE_GEMS', playerIndex, gems: gemsNeeded };
     }
 
-    // Priority 4: Aggressive reserve of high-value cards or opponent-blocking cards
-    if (reservableCards.length > 0) {
+    // Priority 4: Reserve high-value or blocking cards
+    if (!isOpeningTurn && reservableCards.length > 0) {
       const opponentNeeds = this.predictOpponentNeeds(gameState, playerIndex);
 
       const bestReserve = reservableCards.sort((a, b) => {
-        let scoreA = a.points;
-        let scoreB = b.points;
+        let scoreA = this.scoreCard(a, playerState, gameState.nobles, 'hard');
+        let scoreB = this.scoreCard(b, playerState, gameState.nobles, 'hard');
 
-        // Boost score for cards opponents need (blocking strategy)
         if (opponentNeeds.some(need => this.cardMatchesRequirement(a, need))) {
-          scoreA += 20;
+          scoreA += 15;
         }
         if (opponentNeeds.some(need => this.cardMatchesRequirement(b, need))) {
-          scoreB += 20;
+          scoreB += 15;
         }
+
+        const deficitA = this.getCardDeficit(playerState, a).missingAfterGold;
+        const deficitB = this.getCardDeficit(playerState, b).missingAfterGold;
+        scoreA += Math.max(0, 4 - deficitA) * 3;
+        scoreB += Math.max(0, 4 - deficitB) * 3;
 
         return scoreB - scoreA;
       })[0];
 
-      if (!isOpeningTurn && this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
+      const bestDeficit = this.getCardDeficit(playerState, bestReserve).missingAfterGold;
+      if (this.shouldReserveCard(bestReserve, gameState, playerIndex) || bestDeficit <= 2) {
         return { type: 'RESERVE_CARD', playerIndex, card: bestReserve };
-      }
-    }
-
-    // Priority 5: Collect gems for gem-hungry cards
-    const targetCards = displayedCards.filter(card => {
-      const costTotal = this.countGemCost(card.cost);
-      return costTotal >= 5 && this.canAffordWithGold(playerState, card, 3);
-    });
-
-    if (targetCards.length > 0) {
-      const gemsNeeded = this.findBestGemCollection(targetCards, playerState.gems);
-      if (gemsNeeded.length > 0) {
-        return { type: 'TAKE_GEMS', playerIndex, gems: gemsNeeded };
       }
     }
 
@@ -380,7 +421,139 @@ export class AIPlayer {
       score += 3;
     }
 
+    if (this.profile.focusColors.includes(card.color)) {
+      score += 6;
+    }
+
     return Math.min(score, 100);
+  }
+
+  private scoreCard(card: Card, playerState: PlayerState, nobles: Noble[], mode: 'medium' | 'hard'): number {
+    const baseScore = this.evaluateCard(card, playerState, nobles);
+    const totalCost = this.countGemCost(card.cost);
+    const deficit = this.getCardDeficit(playerState, card).missingAfterGold;
+    const earlyGame = playerState.points < 6;
+
+    if (mode === 'medium') {
+      let score = baseScore;
+      score += Math.max(0, 6 - totalCost) * 2;
+      score += Math.max(0, 3 - deficit) * 3;
+      if (earlyGame && card.level === 1) {
+        score += 4;
+      }
+      return score;
+    }
+
+    let score = baseScore;
+    score += Math.max(0, 7 - totalCost) * 3;
+    score += Math.max(0, 4 - deficit) * 5;
+    if (earlyGame && card.level === 1) {
+      score += 8;
+    }
+    if (card.points >= 3) {
+      score += 6;
+    }
+    return score;
+  }
+
+  private getCardDeficit(playerState: PlayerState, card: Card): { missingAfterGold: number; totalMissing: number } {
+    return this.getCardDeficitWithGems(card, playerState.gems);
+  }
+
+  private getCardDeficitWithGems(
+    card: Card,
+    gems: GemCost & { gold: number }
+  ): { missingAfterGold: number; totalMissing: number } {
+    const colors: (keyof GemCost)[] = ['red', 'blue', 'green', 'white', 'black'];
+    let totalMissing = 0;
+
+    for (const color of colors) {
+      const needed = card.cost[color] || 0;
+      const available = gems[color] || 0;
+      if (available < needed) {
+        totalMissing += needed - available;
+      }
+    }
+
+    const missingAfterGold = Math.max(0, totalMissing - (gems.gold || 0));
+    return { missingAfterGold, totalMissing };
+  }
+
+  private selectTargetCards(
+    cards: Card[],
+    playerState: PlayerState,
+    nobles: Noble[],
+    mode: 'medium' | 'hard',
+    count: number
+  ): Card[] {
+    return cards
+      .map(card => ({
+        card,
+        score: this.scoreCard(card, playerState, nobles, mode),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, count)
+      .map(({ card }) => card);
+  }
+
+  private chooseBestGemMove(
+    gameState: GameState,
+    playerState: PlayerState,
+    targetCards: Card[],
+    mode: 'medium' | 'hard'
+  ): string[] {
+    const validMoves = this.getValidGemMoves(gameState, playerState);
+    if (validMoves.length === 0) {
+      return [];
+    }
+
+    let bestMove = validMoves[0];
+    let bestScore = -Infinity;
+
+    validMoves.forEach(move => {
+      const simulatedGems: GemCost & { gold: number } = {
+        ...playerState.gems,
+      };
+
+      move.forEach(color => {
+        const gemColor = color as keyof GemCost;
+        simulatedGems[gemColor] = (simulatedGems[gemColor] || 0) + 1;
+      });
+
+      let score = 0;
+      targetCards.forEach(card => {
+        const deficit = this.getCardDeficitWithGems(card, simulatedGems).missingAfterGold;
+        const cardScore = this.scoreCard(card, playerState, gameState.nobles, mode);
+        score += cardScore - deficit * (mode === 'hard' ? 6 : 4);
+      });
+
+      const focusHits = move.filter(color => this.profile.focusColors.includes(color as Color)).length;
+      score += focusHits * (mode === 'hard' ? 3 : 2);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+    });
+
+    return bestMove;
+  }
+
+  private pickRandomGemMove(validMoves: string[][]): string[] {
+    if (validMoves.length === 0) {
+      return [];
+    }
+
+    const weightedMoves: string[][] = [];
+    validMoves.forEach(move => {
+      const focusHits = move.filter(color => this.profile.focusColors.includes(color as Color)).length;
+      const weight = 1 + focusHits;
+      for (let i = 0; i < weight; i += 1) {
+        weightedMoves.push(move);
+      }
+    });
+
+    return weightedMoves[Math.floor(Math.random() * weightedMoves.length)];
   }
 
   /**
@@ -413,7 +586,13 @@ export class AIPlayer {
 
     // Prefer 2-of-same strategy for same-color needs
     const result: string[] = [];
-    const colorsByNeed = [...colors].sort((a, b) => colorNeeds[b] - colorNeeds[a]);
+    const colorsByNeed = [...colors].sort((a, b) => {
+      const needDelta = colorNeeds[b] - colorNeeds[a];
+      if (needDelta !== 0) return needDelta;
+      const aFocus = this.profile.focusColors.includes(a as Color) ? 1 : 0;
+      const bFocus = this.profile.focusColors.includes(b as Color) ? 1 : 0;
+      return bFocus - aFocus;
+    });
 
     for (const color of colorsByNeed) {
       if (result.length >= 3) break;
@@ -446,8 +625,8 @@ export class AIPlayer {
     const playerState = gameState.players[playerIndex];
     const isOpeningTurn = this.isOpeningTurn(playerState);
 
-    // High-value cards (3+ points) always worth reserving
-    if (card.points >= 3) {
+    // High-value cards (points threshold varies by profile) always worth reserving
+    if (card.points >= this.profile.reservePointsMin) {
       return true;
     }
 
@@ -487,7 +666,7 @@ export class AIPlayer {
   private getReachableNobles(playerState: PlayerState, nobles: Noble[]): Noble[] {
     return nobles.filter(noble => {
       const missingColors = this.countMissingColors(playerState.purchasedCards, noble);
-      return missingColors >= 0 && missingColors <= 2;
+      return missingColors >= 0 && missingColors <= this.profile.nobleMissingMax;
     });
   }
 
@@ -583,9 +762,10 @@ export class AIPlayer {
   private canAffordWithGold(playerState: PlayerState, card: Card, goldThreshold: number): boolean {
     const colors: (keyof GemCost)[] = ['red', 'blue', 'green', 'white', 'black'];
     let goldNeeded = 0;
+    const discount = GameRules.calculateGemDiscount(playerState);
 
     for (const color of colors) {
-      const needed = card.cost[color] || 0;
+      const needed = Math.max(0, (card.cost[color] || 0) - (discount[color] || 0));
       const available = playerState.gems[color] || 0;
 
       if (available < needed) {
@@ -685,4 +865,3 @@ export class AIPlayer {
     return result;
   }
 }
-    const isOpeningTurn = this.isOpeningTurn(playerState);

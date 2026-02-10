@@ -28,7 +28,7 @@ export class GameRules {
    * Check if a player can take the specified gems without exceeding limits.
    *
    * Validates:
-   * - Takes exactly 3 different gems OR 2 of the same (Splendor rule)
+   * - Takes 1-3 gems with allowed patterns (3 different, 2 same, or 2 different/1 when supply is low)
    * - Does not include gold (gold is only gained by reserving)
    *
    * @param playerGems - Player's current gem collection
@@ -47,8 +47,10 @@ export class GameRules {
 
     const isTwoSame = gemsToTake.length === 2 && uniqueColors === 1;
     const isThreeDifferent = gemsToTake.length === 3 && uniqueColors === 3;
+    const isTwoDifferent = gemsToTake.length === 2 && uniqueColors === 2;
+    const isOneGem = gemsToTake.length === 1 && uniqueColors === 1;
 
-    if (!isTwoSame && !isThreeDifferent) {
+    if (!isTwoSame && !isThreeDifferent && !isTwoDifferent && !isOneGem) {
       return false;
     }
 
@@ -63,7 +65,30 @@ export class GameRules {
    * @returns True if player can afford the card, false otherwise
    */
   static canPurchaseCard(playerState: PlayerState, card: Card): boolean {
-    return this.canAfford(playerState.gems, card.cost);
+    return this.canAffordWithDiscount(playerState, card.cost);
+  }
+
+  /**
+   * Check if a player can afford a gem cost with discounts and gold.
+   *
+   * Applies permanent gem bonuses from purchased cards as a discount, then
+   * allows gold to cover any remaining shortfall.
+   */
+  static canAffordWithDiscount(playerState: PlayerState, cost: GemCost): boolean {
+    let goldNeeded = 0;
+    const discount = this.calculateGemDiscount(playerState);
+    const colors: (keyof GemCost)[] = ['red', 'blue', 'green', 'white', 'black'];
+
+    for (const color of colors) {
+      const needed = Math.max(0, (cost[color] || 0) - (discount[color] || 0));
+      const available = playerState.gems[color] || 0;
+
+      if (available < needed) {
+        goldNeeded += needed - available;
+      }
+    }
+
+    return goldNeeded <= (playerState.gems.gold || 0);
   }
 
   /**
@@ -223,6 +248,13 @@ export class GameRules {
 
     const uniqueColors = new Set(gems).size;
     const isTwoSame = gems.length === 2 && uniqueColors === 1;
+    const isThreeDifferent = gems.length === 3 && uniqueColors === 3;
+    const isTwoDifferent = gems.length === 2 && uniqueColors === 2;
+    const isOneGem = gems.length === 1 && uniqueColors === 1;
+
+    const availableColors = (['red', 'blue', 'green', 'white', 'black'] as const).filter(
+      color => (poolGems[color] || 0) > 0
+    ).length;
 
     // Check pool has enough gems, with official 4+ requirement for 2-of-same.
     if (isTwoSame) {
@@ -231,17 +263,25 @@ export class GameRules {
       if (available < 4) {
         return false;
       }
-    } else {
-      const gemCounts: { [key: string]: number } = {};
-      for (const gem of gems) {
-        gemCounts[gem] = (gemCounts[gem] || 0) + 1;
+    } else if (isThreeDifferent) {
+      if (availableColors < 3) {
+        return false;
       }
+    } else if (isTwoDifferent || isOneGem) {
+      if (availableColors >= 3) {
+        return false;
+      }
+    }
 
-      for (const [gem, count] of Object.entries(gemCounts)) {
-        const available = poolGems[gem as Color] || 0;
-        if (available < count) {
-          return false;
-        }
+    const gemCounts: { [key: string]: number } = {};
+    for (const gem of gems) {
+      gemCounts[gem] = (gemCounts[gem] || 0) + 1;
+    }
+
+    for (const [gem, count] of Object.entries(gemCounts)) {
+      const available = poolGems[gem as Color] || 0;
+      if (available < count) {
+        return false;
       }
     }
 

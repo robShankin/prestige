@@ -707,7 +707,7 @@ function calculateGemsToSpend(
   let goldNeeded = 0;
 
   for (const color of colors) {
-    const needed = (cost[color] || 0) - (discount[color] || 0);
+    const needed = Math.max(0, (cost[color] || 0) - (discount[color] || 0));
     const available = playerGems[color] || 0;
 
     if (available >= needed) {

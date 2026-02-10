@@ -15,6 +15,9 @@ interface PlayerDashboardProps {
   reservedCards?: any[];
   purchasedCardCount?: number;
   nobles?: NobleType[];
+  purchasableReservedIds?: string[];
+  disableReservedPurchase?: boolean;
+  onPurchaseReserved?: (card: any) => void;
 }
 
 const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
@@ -23,6 +26,9 @@ const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
   reservedCards = [],
   purchasedCardCount = 0,
   nobles = [],
+  purchasableReservedIds = [],
+  disableReservedPurchase = false,
+  onPurchaseReserved,
 }) => {
   const colorClasses: Record<string, string> = {
     red: 'gem-red',
@@ -90,11 +96,48 @@ const PlayerDashboard: React.FC<PlayerDashboardProps> = ({
           <h4>Reserved ({reservedCards.length})</h4>
           <div className="reserved-cards">
             {reservedCards.map((card) => (
-              <div key={card.id} className="reserved-card-mini">
+              <div
+                key={card.id}
+                className={`reserved-card-mini ${
+                  isCurrent && purchasableReservedIds.includes(card.id) && !disableReservedPurchase
+                    ? 'reserved-card-mini--purchasable'
+                    : ''
+                }`}
+              >
                 <div className="card-mini-points">{card.points}</div>
                 <div className={`card-mini-color`}></div>
-                <div className="reserved-card-preview">
-                  <Card card={card} onClick={() => {}} state="reserved" />
+                <div
+                  className={`reserved-card-preview ${
+                    isCurrent && purchasableReservedIds.includes(card.id) && !disableReservedPurchase
+                      ? 'can-purchase'
+                      : ''
+                  }`}
+                >
+                  <Card
+                    card={card}
+                    onClick={() => {
+                      if (
+                        isCurrent &&
+                        purchasableReservedIds.includes(card.id) &&
+                        !disableReservedPurchase &&
+                        onPurchaseReserved
+                      ) {
+                        onPurchaseReserved(card);
+                      }
+                    }}
+                    state="reserved"
+                    isClickable={
+                      isCurrent &&
+                      purchasableReservedIds.includes(card.id) &&
+                      !disableReservedPurchase &&
+                      Boolean(onPurchaseReserved)
+                    }
+                    isAffordable={
+                      isCurrent &&
+                      purchasableReservedIds.includes(card.id) &&
+                      !disableReservedPurchase
+                    }
+                  />
                 </div>
               </div>
             ))}

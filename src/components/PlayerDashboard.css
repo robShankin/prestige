@@ -172,7 +172,13 @@
   justify-content: center;
   padding: 4px;
   position: relative;
-  opacity: 0.8;
+  opacity: 1;
+}
+
+.reserved-card-mini--purchasable {
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+  border-color: #fff;
 }
 
 .reserved-card-preview {
@@ -185,6 +191,11 @@
   transform: translateY(6px);
   transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
+}
+
+.reserved-card-preview.can-purchase {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .reserved-card-mini:hover .reserved-card-preview {

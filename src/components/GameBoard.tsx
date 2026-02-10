@@ -41,6 +41,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
     new Map()
   ), []);
   const [discardSelection, setDiscardSelection] = useState<string[]>([]);
+  const [gemSelectionReset, setGemSelectionReset] = useState(0);
 
   const validActions = useMemo(() => {
     if (isCurrentPlayerAI || isLoading) return [];
@@ -57,10 +58,23 @@ const GameBoard: React.FC<GameBoardProps> = ({
   );
   const disableActions = isLoading || isCurrentPlayerAI || isDiscarding;
   const disableNonEndActions = disableActions || hasPendingAction;
+  const currentReservedIds = new Set(
+    gameState.players[gameState.currentPlayerIndex].reservedCards.map(card => card.id)
+  );
+  const purchasableReservedIds = new Set(
+    validActions
+      .filter((action) => action.type === 'PURCHASE_CARD' && 'card' in action)
+      .map((action) => (action as any).card.id)
+      .filter((id) => currentReservedIds.has(id))
+  );
 
   useEffect(() => {
     setDiscardSelection([]);
   }, [pendingDiscard?.count, pendingDiscard?.playerIndex]);
+
+  const clearGemSelection = () => {
+    setGemSelectionReset((value) => value + 1);
+  };
 
   return (
     <div className="game-board">
@@ -93,8 +107,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     );
 
                     if (purchaseAction && !disableNonEndActions) {
+                      clearGemSelection();
                       onAction(purchaseAction);
                     } else if (reserveAction && !disableNonEndActions && isCurrentPlayer) {
+                      clearGemSelection();
                       onAction(reserveAction);
                     }
                   }}
@@ -213,6 +229,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             onUndo={onUndo}
             disableEndTurn={disableEndTurn}
             disableUndo={disableUndo}
+            resetSignal={gemSelectionReset}
           />
         </div>
 
@@ -230,6 +247,18 @@ const GameBoard: React.FC<GameBoardProps> = ({
               reservedCards={player.reservedCards}
               purchasedCardCount={player.purchasedCards.length}
               nobles={player.nobles}
+              purchasableReservedIds={idx === gameState.currentPlayerIndex ? Array.from(purchasableReservedIds) : []}
+              disableReservedPurchase={disableNonEndActions}
+              onPurchaseReserved={(card) => {
+                if (disableNonEndActions) return;
+                const action = validActions.find(
+                  (a) => a.type === 'PURCHASE_CARD' && 'card' in a && (a as any).card.id === card.id
+                );
+                if (action) {
+                  clearGemSelection();
+                  onAction(action);
+                }
+              }}
             />
           ))}
         </div>

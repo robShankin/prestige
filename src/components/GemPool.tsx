@@ -2,7 +2,7 @@
  * GemPool component - displays available gems and handles gem selection
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import type { GemCost, Color } from '../types';
 import './GemPool.css';
 
@@ -14,6 +14,7 @@ interface GemPoolProps {
   onUndo: () => void;
   disableEndTurn: boolean;
   disableUndo: boolean;
+  resetSignal: number;
 }
 
 const GemPool: React.FC<GemPoolProps> = ({
@@ -24,6 +25,7 @@ const GemPool: React.FC<GemPoolProps> = ({
   onUndo,
   disableEndTurn,
   disableUndo,
+  resetSignal,
 }) => {
   const [selectedGems, setSelectedGems] = useState<string[]>([]);
 
@@ -37,6 +39,10 @@ const GemPool: React.FC<GemPoolProps> = ({
   };
 
   const gems = ['red', 'blue', 'green', 'white', 'black', 'gold'] as const;
+  const availableColors = gems
+    .filter((color) => color !== 'gold')
+    .filter((color) => (gemPool[color as Color] || 0) > 0);
+  const availableColorCount = availableColors.length;
 
   // Check if selection is valid (2 of same or 3 different)
   const isValidSelection = useMemo(() => {
@@ -54,13 +60,22 @@ const GemPool: React.FC<GemPoolProps> = ({
       return true;
     }
 
-    if (selectedGems.length === 3 && uniqueColors === 3) {
+    if (selectedGems.length === 3 && uniqueColors === 3 && availableColorCount >= 3) {
       // 3 different colors is valid
       return true;
     }
 
+    if (availableColorCount < 3) {
+      if (selectedGems.length === 2 && uniqueColors === 2) {
+        return true;
+      }
+      if (selectedGems.length === 1 && uniqueColors === 1) {
+        return true;
+      }
+    }
+
     return false;
-  }, [selectedGems]);
+  }, [selectedGems, availableColorCount]);
 
   const handleGemClick = useCallback(
     (color: string) => {
@@ -110,6 +125,10 @@ const GemPool: React.FC<GemPoolProps> = ({
     setSelectedGems([]);
   }, []);
 
+  useEffect(() => {
+    setSelectedGems([]);
+  }, [resetSignal]);
+
   return (
     <div className="gem-pool">
       <h3>Gem Pool</h3>
@@ -145,7 +164,7 @@ const GemPool: React.FC<GemPoolProps> = ({
 
       {/* Selection Info */}
       <div className="selection-info">
-        <p>Selected: {selectedGems.length}/3</p>
+        <p>Selected: {selectedGems.length}/{availableColorCount < 3 ? availableColorCount : 3}</p>
         {selectedGems.length > 0 && (
           <div className="selected-gems">
             {selectedGems.map((gem, idx) => (
@@ -187,7 +206,8 @@ const GemPool: React.FC<GemPoolProps> = ({
       {/* Validation Messages */}
       {selectedGems.length > 0 && !isValidSelection && (
         <div className="validation-message">
-          Select 2 of the same color (requires 4+ available) or 3 different colors
+          Select 2 of the same color (requires 4+ available) or 3 different colors.
+          If fewer than 3 colors are available, you may take 2 different or 1.
         </div>
       )}
     </div>

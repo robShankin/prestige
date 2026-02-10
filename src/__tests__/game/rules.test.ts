@@ -28,18 +28,18 @@ describe('GameRules', () => {
       expect(GameRules.canTakeGems(gems, gemsToTake)).toBe(true);
     });
 
-    it('should not allow taking 1 gem', () => {
+    it('should allow taking 1 gem', () => {
       const gems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
       const gemsToTake = ['red'];
 
-      expect(GameRules.canTakeGems(gems, gemsToTake)).toBe(false);
+      expect(GameRules.canTakeGems(gems, gemsToTake)).toBe(true);
     });
 
-    it('should not allow taking 2 different gems', () => {
+    it('should allow taking 2 different gems', () => {
       const gems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
       const gemsToTake = ['red', 'blue'];
 
-      expect(GameRules.canTakeGems(gems, gemsToTake)).toBe(false);
+      expect(GameRules.canTakeGems(gems, gemsToTake)).toBe(true);
     });
 
     it('should not allow taking 3 of the same color', () => {
@@ -488,9 +488,33 @@ describe('GameRules', () => {
       expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(true);
     });
 
-    it('should not allow 1 gem take when available', () => {
+    it('should allow 1 gem take when fewer than 3 colors are available', () => {
       const gems = ['red'];
       const poolGems = createGemPool({ red: 4, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
+      const playerGems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
+
+      expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(true);
+    });
+
+    it('should not allow 1 gem take when 3+ colors are available', () => {
+      const gems = ['red'];
+      const poolGems = createGemPool({ red: 4, blue: 4, green: 4, white: 0, black: 0, gold: 0 });
+      const playerGems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
+
+      expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(false);
+    });
+
+    it('should allow 2 different gems when fewer than 3 colors are available', () => {
+      const gems = ['red', 'black'];
+      const poolGems = createGemPool({ red: 1, blue: 0, green: 0, white: 0, black: 2, gold: 0 });
+      const playerGems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
+
+      expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(true);
+    });
+
+    it('should not allow 2 different gems when 3+ colors are available', () => {
+      const gems = ['red', 'black'];
+      const poolGems = createGemPool({ red: 1, blue: 1, green: 1, white: 0, black: 2, gold: 0 });
       const playerGems = createGemPool({ red: 0, blue: 0, green: 0, white: 0, black: 0, gold: 0 });
 
       expect(GameRules.validateGemTake(gems, poolGems, playerGems)).toBe(false);

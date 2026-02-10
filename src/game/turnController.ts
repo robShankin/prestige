@@ -80,6 +80,17 @@ export class TurnController {
     // Apply the action (human turn: explicit END_TURN required)
     let newState = this.gameReducer(state, action);
 
+    if (action.type !== 'END_TURN') {
+      const player = newState.players[action.playerIndex];
+      const excess = GameRules.countGems(player.gems) - GameRules.MAX_GEMS_PER_PLAYER;
+      if (excess > 0) {
+        newState = {
+          ...newState,
+          pendingDiscard: { playerIndex: action.playerIndex, count: excess },
+        };
+      }
+    }
+
     if (action.type === 'END_TURN') {
       // Check end game condition
       newState = this.checkEndGame(newState);
@@ -319,19 +330,50 @@ export class TurnController {
       }
     }
 
-    // Three gem takes (different colors)
-    for (let i = 0; i < availableGems.length; i++) {
-      for (let j = i + 1; j < availableGems.length; j++) {
-        for (let k = j + 1; k < availableGems.length; k++) {
-          const gems = [availableGems[i], availableGems[j], availableGems[k]];
-          if (GameRules.validateGemTake(gems, state.gemPool, player.gems)) {
-            actions.push({
-              type: 'TAKE_GEMS',
-              playerIndex,
-              gems,
-            });
+    if (availableGems.length >= 3) {
+      // Three gem takes (different colors)
+      for (let i = 0; i < availableGems.length; i++) {
+        for (let j = i + 1; j < availableGems.length; j++) {
+          for (let k = j + 1; k < availableGems.length; k++) {
+            const gems = [availableGems[i], availableGems[j], availableGems[k]];
+            if (GameRules.validateGemTake(gems, state.gemPool, player.gems)) {
+              actions.push({
+                type: 'TAKE_GEMS',
+                playerIndex,
+                gems,
+              });
+            }
           }
         }
+      }
+    } else if (availableGems.length === 2) {
+      // When fewer than 3 colors are available, allow taking 2 different or 1
+      const gems = [availableGems[0], availableGems[1]];
+      if (GameRules.validateGemTake(gems, state.gemPool, player.gems)) {
+        actions.push({
+          type: 'TAKE_GEMS',
+          playerIndex,
+          gems,
+        });
+      }
+
+      for (const gem of availableGems) {
+        if (GameRules.validateGemTake([gem], state.gemPool, player.gems)) {
+          actions.push({
+            type: 'TAKE_GEMS',
+            playerIndex,
+            gems: [gem],
+          });
+        }
+      }
+    } else if (availableGems.length === 1) {
+      const gem = availableGems[0];
+      if (GameRules.validateGemTake([gem], state.gemPool, player.gems)) {
+        actions.push({
+          type: 'TAKE_GEMS',
+          playerIndex,
+          gems: [gem],
+        });
       }
     }
 
@@ -583,6 +625,7 @@ export class TurnController {
       if (action.gems.length !== state.pendingDiscard.count) {
         return false;
       }
+      return true;
     }
 
     return this.isActionValidAgainstList(action, validActions);
