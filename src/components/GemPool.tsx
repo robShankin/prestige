@@ -10,9 +10,21 @@ interface GemPoolProps {
   gemPool: GemCost & { gold: number };
   onSelectGems: (gems: string[]) => void;
   disabled: boolean;
+  onEndTurn: () => void;
+  onUndo: () => void;
+  disableEndTurn: boolean;
+  disableUndo: boolean;
 }
 
-const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) => {
+const GemPool: React.FC<GemPoolProps> = ({
+  gemPool,
+  onSelectGems,
+  disabled,
+  onEndTurn,
+  onUndo,
+  disableEndTurn,
+  disableUndo,
+}) => {
   const [selectedGems, setSelectedGems] = useState<string[]>([]);
 
   const colorClasses: Record<string, string> = {
@@ -147,19 +159,29 @@ const GemPool: React.FC<GemPoolProps> = ({ gemPool, onSelectGems, disabled }) =>
 
       {/* Action Buttons */}
       <div className="gem-actions">
-        <button
-          className="btn btn-primary"
-          onClick={handleTakeGems}
-          disabled={!isValidSelection || disabled}
-          aria-label="Take selected gems"
-        >
-          Take Gems
-        </button>
-        {selectedGems.length > 0 && (
-          <button className="btn btn-secondary" onClick={handleClear} disabled={disabled}>
-            Clear
+        <div className="gem-actions-row">
+          <button
+            className="btn btn-primary"
+            onClick={handleTakeGems}
+            disabled={!isValidSelection || disabled}
+            aria-label="Take selected gems"
+          >
+            Take Gems
           </button>
-        )}
+          {selectedGems.length > 0 && (
+            <button className="btn btn-secondary" onClick={handleClear} disabled={disabled}>
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="gem-turn-actions">
+          <button className="btn btn-primary" onClick={onEndTurn} disabled={disableEndTurn}>
+            End Turn
+          </button>
+          <button className="btn btn-secondary" onClick={onUndo} disabled={disableUndo}>
+            Undo
+          </button>
+        </div>
       </div>
 
       {/* Validation Messages */}

@@ -97,18 +97,18 @@
 }
 
 .gem-display.gem-red {
-  background: rgba(211, 47, 47, 0.2);
-  border-color: #d32f2f;
+  background: rgba(155, 17, 30, 0.2);
+  border-color: #9b111e;
 }
 
 .gem-display.gem-blue {
-  background: rgba(25, 118, 210, 0.2);
-  border-color: #1976d2;
+  background: rgba(15, 59, 127, 0.2);
+  border-color: #0f3b7f;
 }
 
 .gem-display.gem-green {
-  background: rgba(56, 142, 60, 0.2);
-  border-color: #388e3c;
+  background: rgba(10, 122, 66, 0.2);
+  border-color: #0a7a42;
 }
 
 .gem-display.gem-white {
@@ -117,8 +117,8 @@
 }
 
 .gem-display.gem-black {
-  background: rgba(33, 33, 33, 0.3);
-  border-color: #666;
+  background: rgba(0, 0, 0, 0.35);
+  border-color: #1a1a1a;
 }
 
 .gem-display.gem-gold {

@@ -75,6 +75,7 @@ export class AIPlayer {
     const affordableCards = this.getAffordableCards(gameState, playerState);
     const reservableCards = this.getReservableCards(gameState, playerState);
     const validGemMoves = this.getValidGemMoves(gameState, playerState);
+    const isOpeningTurn = this.isOpeningTurn(playerState);
 
     const actions: GameAction[] = [];
 
@@ -86,13 +87,16 @@ export class AIPlayer {
       }
     }
 
-    // Add gem collection moves
+    // Add gem collection moves (opening turn: emphasize taking gems)
     validGemMoves.forEach(gems => {
       actions.push({ type: 'TAKE_GEMS', playerIndex, gems });
+      if (isOpeningTurn) {
+        actions.push({ type: 'TAKE_GEMS', playerIndex, gems });
+      }
     });
 
     // Add reserve moves
-    if (reservableCards.length > 0) {
+    if (reservableCards.length > 0 && !isOpeningTurn) {
       for (let i = 0; i < 2; i++) {
         const card = reservableCards[Math.floor(Math.random() * reservableCards.length)];
         actions.push({ type: 'RESERVE_CARD', playerIndex, card });
@@ -129,6 +133,7 @@ export class AIPlayer {
     const affordableCards = this.getAffordableCards(gameState, playerState);
     const reachableNobles = this.getReachableNobles(playerState, gameState.nobles);
     const reservableCards = this.getReservableCards(gameState, playerState);
+    const isOpeningTurn = this.isOpeningTurn(playerState);
 
     // 40% chance to pick random valid action for unpredictability
     if (Math.random() < 0.4) {
@@ -144,7 +149,7 @@ export class AIPlayer {
         allMoves.push({ type: 'TAKE_GEMS', playerIndex, gems });
       });
 
-      if (reservableCards.length > 0) {
+      if (reservableCards.length > 0 && !isOpeningTurn) {
         const card = reservableCards[Math.floor(Math.random() * reservableCards.length)];
         allMoves.push({ type: 'RESERVE_CARD', playerIndex, card });
       }
@@ -208,7 +213,7 @@ export class AIPlayer {
         return (shouldReserveB * b.points) - (shouldReserveA * a.points);
       })[0];
 
-      if (this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
+      if (!isOpeningTurn && this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
         return { type: 'RESERVE_CARD', playerIndex, card: bestReserve };
       }
     }
@@ -316,7 +321,7 @@ export class AIPlayer {
         return scoreB - scoreA;
       })[0];
 
-      if (this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
+      if (!isOpeningTurn && this.shouldReserveCard(bestReserve, gameState, playerIndex)) {
         return { type: 'RESERVE_CARD', playerIndex, card: bestReserve };
       }
     }
@@ -438,6 +443,9 @@ export class AIPlayer {
    * Decide if a card is worth reserving
    */
   private shouldReserveCard(card: Card, gameState: GameState, playerIndex: number): boolean {
+    const playerState = gameState.players[playerIndex];
+    const isOpeningTurn = this.isOpeningTurn(playerState);
+
     // High-value cards (3+ points) always worth reserving
     if (card.points >= 3) {
       return true;
@@ -452,7 +460,25 @@ export class AIPlayer {
       return true;
     }
 
+    if (isOpeningTurn && !isBlocking) {
+      return false;
+    }
+
     return false;
+  }
+
+  /**
+   * Helper: Detect opening turn (no gems and no purchased cards yet)
+   */
+  private isOpeningTurn(playerState: PlayerState): boolean {
+    const totalGems =
+      (playerState.gems.red || 0) +
+      (playerState.gems.blue || 0) +
+      (playerState.gems.green || 0) +
+      (playerState.gems.white || 0) +
+      (playerState.gems.black || 0) +
+      (playerState.gems.gold || 0);
+    return totalGems === 0 && playerState.purchasedCards.length === 0;
   }
 
   /**
@@ -659,3 +685,4 @@ export class AIPlayer {
     return result;
   }
 }
+    const isOpeningTurn = this.isOpeningTurn(playerState);

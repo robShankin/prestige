@@ -35,18 +35,18 @@
 }
 
 .gem-token.gem-red {
-  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
-  border-color: #ff5252;
+  background: linear-gradient(135deg, var(--gem-light) 0%, var(--gem-color) 100%);
+  border-color: var(--gem-light);
 }
 
 .gem-token.gem-blue {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-  border-color: #42a5f5;
+  background: linear-gradient(135deg, var(--gem-light) 0%, var(--gem-color) 100%);
+  border-color: var(--gem-light);
 }
 
 .gem-token.gem-green {
-  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
-  border-color: #66bb6a;
+  background: linear-gradient(135deg, var(--gem-light) 0%, var(--gem-color) 100%);
+  border-color: var(--gem-light);
 }
 
 .gem-token.gem-white {
@@ -56,8 +56,8 @@
 }
 
 .gem-token.gem-black {
-  background: linear-gradient(135deg, #424242 0%, #212121 100%);
-  border-color: #757575;
+  background: linear-gradient(135deg, var(--gem-light) 0%, var(--gem-color) 100%);
+  border-color: var(--gem-light);
 }
 
 .gem-token.gem-gold {
@@ -145,15 +145,15 @@
 }
 
 .gem-tag.gem-red {
-  background: #d32f2f;
+  background: var(--gem-color);
 }
 
 .gem-tag.gem-blue {
-  background: #1976d2;
+  background: var(--gem-color);
 }
 
 .gem-tag.gem-green {
-  background: #388e3c;
+  background: var(--gem-color);
 }
 
 .gem-tag.gem-white {
@@ -161,7 +161,7 @@
 }
 
 .gem-tag.gem-black {
-  background: #424242;
+  background: var(--gem-color);
   color: #fff;
 }
 
@@ -172,7 +172,19 @@
 /* Gem Actions */
 .gem-actions {
   display: flex;
+  flex-direction: column;
   gap: 10px;
+}
+
+.gem-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.gem-turn-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .btn {

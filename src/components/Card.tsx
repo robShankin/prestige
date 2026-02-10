@@ -4,6 +4,7 @@
 
 import React from 'react';
 import type { Card as CardType } from '../types';
+import { getCardGemBackground } from '../utils/cardGemBackgrounds';
 import './Card.css';
 
 interface CardProps {
@@ -11,9 +12,16 @@ interface CardProps {
   onClick: () => void;
   state?: 'available' | 'reserved' | 'purchased';
   isClickable?: boolean;
+  isAffordable?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClickable = false }) => {
+const Card: React.FC<CardProps> = ({
+  card,
+  onClick,
+  state = 'available',
+  isClickable = false,
+  isAffordable = false,
+}) => {
   const colorClasses: Record<string, string> = {
     red: 'gem-red',
     blue: 'gem-blue',
@@ -24,21 +32,24 @@ const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClick
   };
 
   const bandColorMap: Record<string, string> = {
-    red: '#e74c3c',
-    blue: '#3498db',
-    green: '#2ecc71',
+    red: '#9b111e',
+    blue: '#0f3b7f',
+    green: '#0a7a42',
     white: '#ecf0f1',
-    black: '#2c3e50',
+    black: '#000000',
     gold: '#f39c12',
   };
 
   const costEntries = Object.entries(card.cost)
     .filter(([, count]) => (count || 0) > 0)
     .sort((a, b) => (b[1] || 0) - (a[1] || 0));
+  const gemBackground = getCardGemBackground(card);
 
   return (
     <div
-      className={`card card-level-${card.level} card-${state} ${isClickable ? 'card-clickable' : ''}`}
+      className={`card card-color-${card.color} card-level-${card.level} card-${state} ${
+        isClickable ? 'card-clickable' : ''
+      } ${isAffordable ? 'card-affordable' : ''}`}
       onClick={isClickable ? onClick : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : -1}
@@ -56,6 +67,8 @@ const Card: React.FC<CardProps> = ({ card, onClick, state = 'available', isClick
           : undefined
       }
     >
+      {gemBackground && <div className="card-gem-bg" style={{ backgroundImage: `url(${gemBackground})` }} />}
+
       {/* Colored Band with Points */}
       <div className="card-band">
         {card.points > 0 && <div className="card-points">{card.points}</div>}

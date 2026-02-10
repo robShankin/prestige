@@ -63,18 +63,18 @@ body {
 
 /* Gem Color Definitions */
 .gem-red {
-  --gem-color: #d32f2f;
-  --gem-light: #ff5252;
+  --gem-color: #9b111e;
+  --gem-light: #c1121f;
 }
 
 .gem-blue {
-  --gem-color: #1976d2;
-  --gem-light: #42a5f5;
+  --gem-color: #0f3b7f;
+  --gem-light: #1d5fbf;
 }
 
 .gem-green {
-  --gem-color: #388e3c;
-  --gem-light: #66bb6a;
+  --gem-color: #0a7a42;
+  --gem-light: #1b9c5a;
 }
 
 .gem-white {
@@ -83,8 +83,8 @@ body {
 }
 
 .gem-black {
-  --gem-color: #424242;
-  --gem-light: #666;
+  --gem-color: #000;
+  --gem-light: #1a1a1a;
 }
 
 .gem-gold {

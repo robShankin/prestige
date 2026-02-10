@@ -10,7 +10,6 @@ import Card from './Card';
 import NobleComponent from './Noble';
 import GemPool from './GemPool';
 import PlayerDashboard from './PlayerDashboard';
-import ActionButtons from './ActionButtons';
 import './GameBoard.css';
 
 interface GameBoardProps {
@@ -19,6 +18,10 @@ interface GameBoardProps {
   isLoading: boolean;
   isCurrentPlayerAI: boolean;
   hasPendingAction: boolean;
+  onEndTurn: () => void;
+  onUndo: () => void;
+  disableEndTurn: boolean;
+  disableUndo: boolean;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -27,6 +30,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
   isLoading,
   isCurrentPlayerAI,
   hasPendingAction,
+  onEndTurn,
+  onUndo,
+  disableEndTurn,
+  disableUndo,
 }) => {
   const turnController = useMemo(() => new TurnController(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -100,6 +107,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
                         (a.type === 'PURCHASE_CARD' || a.type === 'RESERVE_CARD') &&
                         'card' in a &&
                         (a as any).card.id === (card as any).id
+                    )
+                  }
+                  isAffordable={
+                    isCurrentPlayer &&
+                    !disableNonEndActions &&
+                    validActions.some(
+                      (a) => a.type === 'PURCHASE_CARD' && 'card' in a && (a as any).card.id === (card as any).id
                     )
                   }
                 />
@@ -195,16 +209,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
               }
             }}
             disabled={disableNonEndActions}
+            onEndTurn={onEndTurn}
+            onUndo={onUndo}
+            disableEndTurn={disableEndTurn}
+            disableUndo={disableUndo}
           />
         </div>
 
-        <ActionButtons
-          validActions={validActions}
-          onAction={onAction}
-          disabled={disableActions}
-          disableNonEndActions={disableNonEndActions}
-          isAITurn={isCurrentPlayerAI}
-        />
       </section>
 
       {/* Player Dashboards */}

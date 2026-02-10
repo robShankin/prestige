@@ -65,15 +65,15 @@
 
 /* Gem Color Styles */
 .noble-cost-gem.gem-red {
-  background: #e74c3c;
+  background: var(--gem-color);
 }
 
 .noble-cost-gem.gem-blue {
-  background: #3498db;
+  background: var(--gem-color);
 }
 
 .noble-cost-gem.gem-green {
-  background: #2ecc71;
+  background: var(--gem-color);
 }
 
 .noble-cost-gem.gem-white {
@@ -81,8 +81,12 @@
   color: #333;
 }
 
+.noble-cost-gem.gem-white .cost-number {
+  color: #111;
+}
+
 .noble-cost-gem.gem-black {
-  background: #2c3e50;
+  background: var(--gem-color);
 }
 
 .noble-cost-gem.gem-gold {

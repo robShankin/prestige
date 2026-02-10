@@ -221,22 +221,6 @@ export const Game: React.FC<GameProps> = () => {
             <button className="btn-quit" onClick={() => handleConfirmNavigation('menu')} title="Return to setup">
               ✕ Menu
             </button>
-            <button
-              className="btn btn-primary"
-              onClick={() => handleAction({ type: 'END_TURN', playerIndex: gameState.currentPlayerIndex })}
-              disabled={isLoading || isCurrentPlayerAI || isDiscarding || !hasPendingAction}
-              title="End your turn"
-            >
-              End Turn
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={handleUndo}
-              disabled={isLoading || isCurrentPlayerAI || !hasPendingAction}
-              title="Undo your action"
-            >
-              Undo
-            </button>
           </div>
         </div>
         <div className="game-status">
@@ -282,6 +266,10 @@ export const Game: React.FC<GameProps> = () => {
         isLoading={isLoading}
         isCurrentPlayerAI={isCurrentPlayerAI}
         hasPendingAction={hasPendingAction}
+        onEndTurn={() => handleAction({ type: 'END_TURN', playerIndex: gameState.currentPlayerIndex })}
+        onUndo={handleUndo}
+        disableEndTurn={isLoading || isCurrentPlayerAI || isDiscarding || !hasPendingAction}
+        disableUndo={isLoading || isCurrentPlayerAI || !hasPendingAction}
       />
 
       {isLoading && (

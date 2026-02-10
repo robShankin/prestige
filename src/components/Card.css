@@ -12,6 +12,17 @@
   overflow: hidden;
 }
 
+.card-gem-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.35;
+  filter: saturate(1.15) contrast(1.05);
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* Colored Band at Top (20% of card height = 40px) */
 .card-band {
   position: absolute;
@@ -35,10 +46,17 @@
   z-index: 2;
 }
 
+.card-color-white .card-points {
+  color: #111;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
 /* Card Content Area */
 .card-content {
   flex: 1;
   padding: 50px 12px 60px 12px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Card Level Indicator (bottom right, small) */
@@ -87,15 +105,15 @@
 
 /* Gem Color Styles */
 .cost-gem.gem-red {
-  background: #e74c3c;
+  background: var(--gem-color);
 }
 
 .cost-gem.gem-blue {
-  background: #3498db;
+  background: var(--gem-color);
 }
 
 .cost-gem.gem-green {
-  background: #2ecc71;
+  background: var(--gem-color);
 }
 
 .cost-gem.gem-white {
@@ -103,8 +121,12 @@
   color: #333;
 }
 
+.cost-gem.gem-white .cost-number {
+  color: #111;
+}
+
 .cost-gem.gem-black {
-  background: #2c3e50;
+  background: var(--gem-color);
 }
 
 .cost-gem.gem-gold {
@@ -127,12 +149,16 @@
   border-color: #667eea;
 }
 
+.card-affordable {
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.45), 0 0 36px rgba(255, 255, 255, 0.2);
+}
+
 .card-available.card-clickable:active {
   transform: scale(0.98);
 }
 
 .card-reserved {
-  opacity: 0.6;
+  opacity: 1;
   border-color: #ffc107;
 }
 
@@ -171,8 +197,9 @@
 }
 
 .reserved-overlay {
-  background: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
+  background: rgba(10, 12, 22, 0.55);
+  color: #ffd36a;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(2px);
 }
 
